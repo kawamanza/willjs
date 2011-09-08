@@ -31,6 +31,7 @@
     }
     function defaultConfig() {
         return {
+            "mode": will.modes.DEV,
             "domains": {
                 "local": "/javascripts/will-functions/"
             },
@@ -39,6 +40,7 @@
                 this.domains[domainName] = urlPrefix;
             },
             "packages": {},
+            "defaultPackage": "defaultFunctions",
             "registerPackage": function (packageName, functions) {
                 var funcs = functions.split(/,/), p, func, len, i;
                 p = this.packages;
@@ -57,9 +59,36 @@
         }
         if (typeof initConfig == "function") initConfig(context.cfg);
     }
+    function registerFunctions(registry, funcs, func) {
+        var f = funcs.impl || funcs.getImpl && funcs.getImpl();
+        if (typeof funcs != "object") {
+            return;
+        }
+        else if (typeof f == "function") {
+            var entry = registry[func];
+            if (! entry) {
+                entry = registry[func] = {
+                    queue: []
+                };
+            }
+            entry.impl = f;
+        } else {
+            for(func in funcs) {
+                registerFunctions(registry, funcs[func], func);
+            }
+        }
+    }
     function stubsTo(context, func) {
+        var d = context.cfg.domains,
+            domain = "local", packageName = context.cfg.defaultPackage;
+        if ( /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/.test(func) ){
+            domain = RegExp.$1 || domain;
+            packageName = RegExp.$2 || packageName;
+            func = RegExp.$3;
+        }
+        domain = d[domain] || d.local;
         return function () {
-            var r = context.registry, entry = r[func];
+            var r = context.registry, entry = r[func], url;
             if (! entry) {
                 entry = r[func] = {
                     queue: []
@@ -69,15 +98,26 @@
               entry.impl.apply(context, arguments);
             } else {
                 entry.queue.push(arguments);
-                will.u.loadComponent(context.cfg.domains.local + func + ".json",
+                url = domain;
+                if (context.cfg.mode == will.modes.PROD) {
+                    url += packageName;
+                } else {
+                    if ( packageName == context.cfg.defaultPackage) {
+                        url += func;
+                    } else {
+                        url += packageName + "/" + func;
+                    }
+                }
+                will.u.loadComponent(url + ".json",
                     function (data) {
                         if (typeof data == "string") {
-                            data = eval("("+data+")");
+                            try{data = eval("("+data+")");}catch(e){return;}
                         }
-                        var f = data.impl || data.getImpl();
-                        entry.impl = f;
+                        if (typeof data != "object") return;
+                        registerFunctions(r, data, func);
+                        entry = r[func];
                         while (entry.queue.length) {
-                            f.apply(context, entry.queue.shift());
+                            entry.impl.apply(context, entry.queue.shift());
                         }
                     });
             }
@@ -89,6 +129,7 @@
         "call": function (selector) {
             return stubsTo(this, selector);
         },
+        "modes": {DEV:0, PROD:1},
         "u.extend": extend
     });
     extend.call(will, {
