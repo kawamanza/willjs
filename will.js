@@ -45,7 +45,7 @@
                 this.domains[domainName] = urlPrefix + (/\/$/.test(urlPrefix) ? "/" : "");
             },
             "packages": {},
-            "defaultPackage": "defaultFunctions",
+            "defaultPackage": "root",
             "registerPackage": function (packageName, functions) {
                 var funcs = functions.split(/,/), p, len, i;
                 p = this.packages;
@@ -63,20 +63,24 @@
         }
         if (typeof initConfig === "function") initConfig(context.cfg);
     }
-    function entryOf(registry, func) {
-        return registry[func] || (registry[func] = {queue:[]});
+    function entryOf(registry, path) {
+        var pn = path.packageName,
+            p = registry[pn] || (registry[pn] = {}),
+            f = path.func;
+        return p[f] || (p[f] = {queue:[]});
     }
-    function registerFunctions(registry, funcs, func) {
+    function registerFunctions(registry, funcs, path) {
         if (isntObject(funcs)) return;
         var entry,
             g = funcs.getImpl,
             f = funcs.impl || g && g();
         if (typeof f === "function") {
-            entry = entryOf(registry, func);
+            entry = entryOf(registry, path);
             entry.impl = f;
         } else {
-            for(func in funcs) {
-                registerFunctions(registry, funcs[func], func);
+            for(f in funcs) {
+                path.func = f;
+                registerFunctions(registry, funcs[f], path);
             }
         }
     }
@@ -108,7 +112,7 @@
         return function () {
             var registry = context.registry,
                 path = pathFor(context, funcPath),
-                entry = entryOf(registry, path.func),
+                entry = entryOf(registry, path),
                 queue = entry.queue, impl = entry.impl;
             if (impl) return impl.apply(context, arguments);
             queue.push(arguments);
@@ -117,7 +121,7 @@
                     try{data = eval("("+data+")");}catch(e){return;}
                 }
                 if (isntObject(data)) return;
-                registerFunctions(registry, data, path.func);
+                registerFunctions(registry, data, path);
                 impl = entry.impl;
                 while (queue.length) {
                     impl.apply(context, queue.shift());
