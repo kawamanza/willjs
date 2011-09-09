@@ -4,7 +4,7 @@
     window.will = will;
     function fill(root, keys, value) {
         var key, v;
-        if (typeof keys == 'string') {
+        if (typeof keys === 'string') {
             keys = keys.split(/\./);
         }
         key = keys.shift();
@@ -12,7 +12,7 @@
             root[key] = value;
         } else {
             v = root[key];
-            if (typeof v != "object" || v.constructor.name == "Array") {
+            if (typeof v !== "object" || v.constructor.name == "Array") {
                 v = {};
                 root[key] = v;
             }
@@ -21,7 +21,7 @@
     }
     function extend(hash) {
         var key = "", k;
-        if (typeof hash == "string") {
+        if (typeof hash === "string") {
             key = hash + ".";
             hash = arguments[1];
         }
@@ -57,20 +57,23 @@
             context.registry = {};
             if (! ("call" in context)) extend.call(context, basicApi);
         }
-        if (typeof initConfig == "function") initConfig(context.cfg);
+        if (typeof initConfig === "function") initConfig(context.cfg);
+    }
+    function entryOf(registry, func) {
+        var entry = registry[func];
+        if (! entry) {
+            entry = registry[func] = {
+                queue: []
+            };
+        }
+        return entry;
     }
     function registerFunctions(registry, funcs, func) {
-        var f = funcs.impl || funcs.getImpl && funcs.getImpl();
-        if (typeof funcs != "object") {
-            return;
-        }
-        else if (typeof f == "function") {
-            var entry = registry[func];
-            if (! entry) {
-                entry = registry[func] = {
-                    queue: []
-                };
-            }
+        if (typeof funcs !== "object") return;
+        var entry,
+            f = funcs.impl || funcs.getImpl && funcs.getImpl();
+        if (typeof f === "function") {
+            entry = entryOf(registry, func);
             entry.impl = f;
         } else {
             for(func in funcs) {
@@ -78,48 +81,51 @@
             }
         }
     }
-    function stubsTo(context, func) {
-        var d = context.cfg.domains,
-            domain = "local", packageName = context.cfg.defaultPackage;
-        if ( /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/.test(func) ){
-            domain = RegExp.$1 || domain;
-            packageName = RegExp.$2 || packageName;
+    function pathFor(context, funcPath) {
+        var cfg = context.cfg,
+            domain = "local",
+            packageName = cfg.defaultPackage,
+            func = funcPath;
+        if ( /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/.test(funcPath) ){
             func = RegExp.$3;
+            packageName = RegExp.$2 || cfg.packages[func] || packageName;
+            domain = RegExp.$1 || domain;
         }
-        domain = d[domain] || d.local;
-        return function () {
-            var r = context.registry, entry = r[func], url;
-            if (! entry) {
-                entry = r[func] = {
-                    queue: []
-                };
+        domain = cfg.domains[domain] || cfg.domains.local;
+        return {domain: domain, packageName: packageName, func: func};
+    }
+    function urlFor(context, path) {
+        var cfg = context.cfg, url = path.domain;
+        if (cfg.mode == will.modes.PROD) {
+            url += path.packageName;
+        } else {
+            if (path.packageName == cfg.defaultPackage) {
+                url += path.func;
+            } else {
+                url += path.packageName + "/" + path.func;
             }
+        }
+        return url + ".json";
+    }
+    function stubsTo(context, funcPath) {
+        return function () {
+            var registry = context.registry,
+                path = pathFor(context, funcPath),
+                entry = entryOf(registry, path.func);
             if (entry.impl) {
-              entry.impl.apply(context, arguments);
+              return entry.impl.apply(context, arguments);
             } else {
                 entry.queue.push(arguments);
-                url = domain;
-                if (context.cfg.mode == will.modes.PROD) {
-                    url += packageName;
-                } else {
-                    if ( packageName == context.cfg.defaultPackage) {
-                        url += func;
-                    } else {
-                        url += packageName + "/" + func;
+                will.u.loadComponent(urlFor(context, path), function (data) {
+                    if (typeof data === "string") {
+                        try{data = eval("("+data+")");}catch(e){return;}
                     }
-                }
-                will.u.loadComponent(url + ".json",
-                    function (data) {
-                        if (typeof data == "string") {
-                            try{data = eval("("+data+")");}catch(e){return;}
-                        }
-                        if (typeof data != "object") return;
-                        registerFunctions(r, data, func);
-                        entry = r[func];
-                        while (entry.queue.length) {
-                            entry.impl.apply(context, entry.queue.shift());
-                        }
-                    });
+                    if (typeof data !== "object") return;
+                    registerFunctions(registry, data, path.func);
+                    while (entry.queue.length) {
+                        entry.impl.apply(context, entry.queue.shift());
+                    }
+                });
             }
         };
     }
