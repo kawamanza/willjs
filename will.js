@@ -2,9 +2,15 @@
     "use strict";
     var will = {}, basicApi = {};
     window.will = will;
+    function isString(value) {
+        return typeof value === "string";
+    }
+    function isntObject(value) {
+        return typeof value !== "object";
+    }
     function fill(root, keys, value) {
         var key, v;
-        if (typeof keys === 'string') {
+        if (isString(keys)) {
             keys = keys.split(/\./);
         }
         key = keys.shift();
@@ -12,18 +18,18 @@
             root[key] = value;
         } else {
             v = root[key];
-            if (typeof v !== "object" || v.constructor.name == "Array") {
+            if (isntObject(v) || v.constructor.name == "Array") {
                 v = {};
                 root[key] = v;
             }
             fill(v, keys, value);
         }
     }
-    function extend(hash) {
+    function extend(hash, other) {
         var key = "", k;
-        if (typeof hash === "string") {
+        if (isString(hash)) {
             key = hash + ".";
-            hash = arguments[1];
+            hash = other;
         }
         for (k in hash) {
             fill(this, key + k, hash[k]);
@@ -61,7 +67,7 @@
         return registry[func] || (registry[func] = {queue:[]});
     }
     function registerFunctions(registry, funcs, func) {
-        if (typeof funcs !== "object") return;
+        if (isntObject(funcs)) return;
         var entry,
             g = funcs.getImpl,
             f = funcs.impl || g && g();
@@ -102,22 +108,21 @@
         return function () {
             var registry = context.registry,
                 path = pathFor(context, funcPath),
-                entry = entryOf(registry, path.func);
-            if (entry.impl) {
-              return entry.impl.apply(context, arguments);
-            } else {
-                entry.queue.push(arguments);
-                will.u.loadComponent(urlFor(context, path), function (data) {
-                    if (typeof data === "string") {
-                        try{data = eval("("+data+")");}catch(e){return;}
-                    }
-                    if (typeof data !== "object") return;
-                    registerFunctions(registry, data, path.func);
-                    while (entry.queue.length) {
-                        entry.impl.apply(context, entry.queue.shift());
-                    }
-                });
-            }
+                entry = entryOf(registry, path.func),
+                queue = entry.queue, impl = entry.impl;
+            if (impl) return impl.apply(context, arguments);
+            queue.push(arguments);
+            will.u.loadComponent(urlFor(context, path), function (data) {
+                if (isString(data)) {
+                    try{data = eval("("+data+")");}catch(e){return;}
+                }
+                if (isntObject(data)) return;
+                registerFunctions(registry, data, path.func);
+                impl = entry.impl;
+                while (queue.length) {
+                    impl.apply(context, queue.shift());
+                }
+            });
         };
     }
 
