@@ -36,17 +36,15 @@
                 "local": "/javascripts/will-functions/"
             },
             "addDomain": function (domainName, urlPrefix) {
-                if (! /\/$/.test(urlPrefix)) urlPrefix += "/"
-                this.domains[domainName] = urlPrefix;
+                this.domains[domainName] = urlPrefix + (/\/$/.test(urlPrefix) ? "/" : "");
             },
             "packages": {},
             "defaultPackage": "defaultFunctions",
             "registerPackage": function (packageName, functions) {
-                var funcs = functions.split(/,/), p, func, len, i;
+                var funcs = functions.split(/,/), p, len, i;
                 p = this.packages;
-                for (i = 0, len = funcs.length; i < len; i++) {
-                    func = funcs[i];
-                    p[func] = packageName;
+                for (i = 0, len = funcs.length; i < len; ) {
+                    p[funcs[i++]] = packageName;
                 }
             }
         };
@@ -60,18 +58,13 @@
         if (typeof initConfig === "function") initConfig(context.cfg);
     }
     function entryOf(registry, func) {
-        var entry = registry[func];
-        if (! entry) {
-            entry = registry[func] = {
-                queue: []
-            };
-        }
-        return entry;
+        return registry[func] || (registry[func] = {queue:[]});
     }
     function registerFunctions(registry, funcs, func) {
         if (typeof funcs !== "object") return;
         var entry,
-            f = funcs.impl || funcs.getImpl && funcs.getImpl();
+            g = funcs.getImpl,
+            f = funcs.impl || g && g();
         if (typeof f === "function") {
             entry = entryOf(registry, func);
             entry.impl = f;
@@ -83,29 +76,27 @@
     }
     function pathFor(context, funcPath) {
         var cfg = context.cfg,
-            domain = "local",
+            d = cfg.domains,
+            domain = d.local,
             packageName = cfg.defaultPackage,
             func = funcPath;
         if ( /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/.test(funcPath) ){
             func = RegExp.$3;
             packageName = RegExp.$2 || cfg.packages[func] || packageName;
-            domain = RegExp.$1 || domain;
+            domain = d[RegExp.$1 || "local"] || domain;
         }
-        domain = cfg.domains[domain] || cfg.domains.local;
         return {domain: domain, packageName: packageName, func: func};
     }
     function urlFor(context, path) {
-        var cfg = context.cfg, url = path.domain;
-        if (cfg.mode == will.modes.PROD) {
-            url += path.packageName;
-        } else {
-            if (path.packageName == cfg.defaultPackage) {
-                url += path.func;
-            } else {
-                url += path.packageName + "/" + path.func;
-            }
-        }
-        return url + ".json";
+        var cfg = context.cfg,
+            pn = path.packageName, f = path.func;
+        return path.domain
+            + (cfg.mode == will.modes.PROD
+                ? pn
+                : pn == cfg.defaultPackage
+                    ? f
+                    : pn + "/" + f)
+            + ".json";
     }
     function stubsTo(context, funcPath) {
         return function () {
