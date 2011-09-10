@@ -38,6 +38,7 @@
     function defaultConfig() {
         return {
             "mode": will.modes.DEV,
+            "processors": {},
             "domains": {
                 "local": "/javascripts/will-functions/"
             },
@@ -55,10 +56,72 @@
             }
         };
     }
+    function queueProcessor(args) {
+        var self = this,
+            r = self.lastRun,
+            s = self.lastSleep,
+            t = self.timeout,
+            inc = 5, limit = 300,
+            now = new Date().getTime();
+        if (args) {
+            self.queue.push(args);
+            if (!t || (now - r + s) > inc) {
+                if (t) clearTimeout(t);
+                self.lastSleep = inc;
+                self.lastRun = now;
+                self.timeout = setTimeout(function(){queueProcessor.call(self);}, inc);
+            }
+        } else {
+            self.lastRun = now;
+            if (self.queue.length) {
+                args = self.queue.shift();
+                s = inc;
+                self.run.apply(null, args);
+            } else {
+                s = s + inc;
+            }
+            self.lastSleep = s;
+            if (self.lastRun == now) {
+                if (s >= limit) {
+                    self.timeout = null;
+                } else {
+                    self.lastRun = new Date().getTime();
+                    self.timeout = setTimeout(function(){queueProcessor.call(self);}, s);
+                }
+            }
+        }
+    }
+    function newProcessor(func) {
+        return {
+            queue: [],
+            lastRun: new Date().getTime() - 1000,
+            lastSleep: 1000,
+            run: func,
+            process: queueProcessor
+        };
+    }
+    function addDefaultProcessors(processors) {
+        processors.callComponent = newProcessor(function(context, path, args) {
+            var registry = context.registry, entry = entryOf(registry, path);
+            queue.push(args);
+            will.u.loadComponent(urlFor(context, path), function (data) {
+                if (isString(data)) {
+                    try{data = eval("("+data+")");}catch(e){return;}
+                }
+                if (isntObject(data)) return;
+                registerFunctions(registry, data, path);
+                impl = entry.impl;
+                while (queue.length) {
+                    impl.apply(context, queue.shift());
+                }
+            });
+        });
+    }
     function setup(context, reset, initConfig) {
         if (reset || ! ("cfg" in context)) {
             extend.call(context, "cfg", defaultConfig());
             context.registry = {};
+            addDefaultProcessors(context.cfg.processors);
             if (! ("call" in context)) extend.call(context, basicApi);
         }
         if (typeof initConfig === "function") initConfig(context.cfg);
@@ -108,6 +171,11 @@
                     : pn + "/" + f)
             + ".json";
     }
+    function process(context, handler, args) {
+        var r = context.cfg.processors,
+            p = r[handler];
+        if (p) p.process(args);
+    }
     function stubsTo(context, funcPath) {
         return function () {
             var registry = context.registry,
@@ -115,18 +183,7 @@
                 entry = entryOf(registry, path),
                 queue = entry.queue, impl = entry.impl;
             if (impl) return impl.apply(context, arguments);
-            queue.push(arguments);
-            will.u.loadComponent(urlFor(context, path), function (data) {
-                if (isString(data)) {
-                    try{data = eval("("+data+")");}catch(e){return;}
-                }
-                if (isntObject(data)) return;
-                registerFunctions(registry, data, path);
-                impl = entry.impl;
-                while (queue.length) {
-                    impl.apply(context, queue.shift());
-                }
-            });
+            context.process("callComponent", [context, path, arguments]);
         };
     }
 
@@ -134,6 +191,9 @@
     extend.call(basicApi, {
         "call": function (selector) {
             return stubsTo(this, selector);
+        },
+        "process": function (handler, args) {
+            process(this, handler, args);
         },
         "modes": {DEV:0, PROD:1},
         "u.extend": extend
