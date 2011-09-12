@@ -99,7 +99,7 @@
         };
     }
     function addDefaultProcessors(processors) {
-        processors.callComponent = newProcessor(function(context, path, args) {
+        processors.callComponent = newProcessor(function (context, path, args) {
             var self = this,
                 registry = context.registry,
                 entry = entryOf(registry, path),
@@ -297,8 +297,11 @@
                 completeCallback("error");
                 script.onload = script.onreadystatechange = null;
                 script.onerror = script.onabort = null;
+                if (head && script.parentNode) {
+                    head.removeChild(script);
+                }
             };
-            head.insertBefore(script, head.firstChild);
+            head.appendChild(script);
         },
         "loadComponent": function (url, completeCallback) {
             $.ajax({
