@@ -207,11 +207,12 @@
     function stubsTo(context, funcPath) {
         return function () {
             var registry = context.registry,
+                args = arguments,
                 path = pathFor(context, funcPath),
                 entry = entryOf(registry, path),
                 queue = entry.queue, impl = entry.impl;
-            if (impl) return impl.apply(context, arguments);
-            context.process("callComponent", context, path, arguments);
+            if (impl) return impl.apply(context, args);
+            process(context, "callComponent", [context, path, args]);
         };
     }
 
