@@ -145,7 +145,7 @@
                 });
                 return false;
             } else {
-                entry.impl.apply(context, args);
+                entry.impl.apply(entry, args);
             }
         });
     }
