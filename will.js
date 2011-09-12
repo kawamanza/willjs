@@ -8,6 +8,9 @@
     function isntObject(value) {
         return typeof value !== "object";
     }
+    function isFunction(value) {
+        return typeof value === "function";
+    }
     function fill(root, keys, value) {
         var key, v;
         if (isString(keys)) {
@@ -38,6 +41,7 @@
     function defaultConfig() {
         return {
             "mode": will.modes.DEV,
+            "processors": {},
             "domains": {
                 "local": "/javascripts/will-functions/"
             },
@@ -55,13 +59,83 @@
             }
         };
     }
+    function newProcessor(func) {
+        return {
+            queue: [],
+            active: false,
+            run: func,
+            sched: function () {
+                var self = this;
+                setTimeout(function () {self.process();}, 10);
+            },
+            process: function (args) {
+                var self = this,
+                    queue = self.queue;
+                if (arguments.length) {
+                    if (isntObject(args) || args.constructor.name != "Array") args = [args];
+                    queue.push(args);
+                    setTimeout(function () {
+                        if (queue.length && !self.active) {
+                            self.active = true;
+                            self.process();
+                        }
+                    }, 20);
+                } else {
+                    if (queue.length) {
+                        args = queue.shift();
+                        try {
+                            if (self.run.apply(self, args) !== false){
+                                self.sched();
+                            }
+                        } catch (e) {
+                            self.sched();
+                            throw e;
+                        }
+                    } else {
+                        self.active = false;
+                    }
+                }
+            }
+        };
+    }
+    function addDefaultProcessors(processors) {
+        processors.callComponent = newProcessor(function(context, path, args) {
+            var self = this,
+                registry = context.registry,
+                entry = entryOf(registry, path),
+                queue = entry.queue,
+                impl = entry.impl;
+            if (impl) {
+                impl.apply(context, arguments);
+                return;
+            }
+            queue.push(args);
+            will.u.loadComponent(urlFor(context, path), function (data) {
+                try {
+                    if (isString(data)) {
+                        try{data = eval("("+data+")");}catch(e){return;}
+                    }
+                    if (isntObject(data)) return;
+                    registerFunctions(context, registry, data, path);
+                    impl = entry.impl;
+                    while (queue.length) {
+                        impl.apply(context, queue.shift());
+                    }
+                } finally {
+                    self.sched();
+                }
+            });
+            return false;
+        });
+    }
     function setup(context, reset, initConfig) {
         if (reset || ! ("cfg" in context)) {
             extend.call(context, "cfg", defaultConfig());
             context.registry = {};
+            addDefaultProcessors(context.cfg.processors);
             if (! ("call" in context)) extend.call(context, basicApi);
         }
-        if (typeof initConfig === "function") initConfig(context.cfg);
+        if (isFunction(initConfig)) initConfig(context.cfg);
     }
     function entryOf(registry, path) {
         var pn = path.packageName,
@@ -69,18 +143,18 @@
             f = path.func;
         return p[f] || (p[f] = {queue:[]});
     }
-    function registerFunctions(registry, funcs, path) {
+    function registerFunctions(context, registry, funcs, path) {
         if (isntObject(funcs)) return;
         var entry,
             g = funcs.getImpl,
-            f = funcs.impl || g && g();
-        if (typeof f === "function") {
+            f = funcs.impl || g && g(context);
+        if (isFunction(f)) {
             entry = entryOf(registry, path);
             entry.impl = f;
         } else {
             for(f in funcs) {
                 path.func = f;
-                registerFunctions(registry, funcs[f], path);
+                registerFunctions(context, registry, funcs[f], path);
             }
         }
     }
@@ -108,6 +182,14 @@
                     : pn + "/" + f)
             + ".json";
     }
+    function process(context, handler, args) {
+        var r = context.cfg.processors,
+            p = r[handler];
+        if (!p) {
+            p = r[handler] = newProcessor(function(f) {if (isFunction(f)) f();});
+        }
+        p.process(args);
+    }
     function stubsTo(context, funcPath) {
         return function () {
             var registry = context.registry,
@@ -115,18 +197,7 @@
                 entry = entryOf(registry, path),
                 queue = entry.queue, impl = entry.impl;
             if (impl) return impl.apply(context, arguments);
-            queue.push(arguments);
-            will.u.loadComponent(urlFor(context, path), function (data) {
-                if (isString(data)) {
-                    try{data = eval("("+data+")");}catch(e){return;}
-                }
-                if (isntObject(data)) return;
-                registerFunctions(registry, data, path);
-                impl = entry.impl;
-                while (queue.length) {
-                    impl.apply(context, queue.shift());
-                }
-            });
+            context.process("callComponent", [context, path, arguments]);
         };
     }
 
@@ -134,6 +205,9 @@
     extend.call(basicApi, {
         "call": function (selector) {
             return stubsTo(this, selector);
+        },
+        "process": function (handler, args) {
+            process(this, handler, args);
         },
         "modes": {DEV:0, PROD:1},
         "u.extend": extend
