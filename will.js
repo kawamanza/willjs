@@ -128,6 +128,26 @@
             });
             return false;
         });
+        processors.loadDependenciesAndCall = newProcessor(function (entry, args) {
+            var self = this,
+                libs = entry.libs, lib;
+            if (libs.length) {
+                lib = libs[0];
+                will.u.loadLib(lib, function (status) {
+                    try {
+                        if (status === "success") {
+                            libs.shift();
+                            entry.impl.apply(entry, args);
+                        }
+                    } finally {
+                        self.sched();
+                    }
+                });
+                return false;
+            } else {
+                entry.impl.apply(context, args);
+            }
+        });
     }
     function setup(context, reset, initConfig) {
         if (reset || ! ("cfg" in context)) {
@@ -144,14 +164,27 @@
             f = path.func;
         return p[f] || (p[f] = {queue:[]});
     }
+    function implWrapper(context, entry, f) {
+        var func = function () {return f.apply(context, arguments);};
+        return entry.libs.length ? function () {
+            var args = arguments;
+            if (entry.libs.length) {
+                process(context, "loadDependenciesAndCall", [entry, args]);
+            } else {
+                entry.impl = func;
+                return f.apply(context, args);
+            }
+        } : func;
+    }
     function registerFunctions(context, registry, funcs, path) {
         if (isntObject(funcs)) return;
         var entry,
-            g = funcs.getImpl,
-            f = funcs.impl || g && g(context);
+            f = funcs.impl || isFunction(funcs.getImpl) && funcs.getImpl(context),
+            l = funcs.libs;
         if (isFunction(f)) {
             entry = entryOf(registry, path);
-            entry.impl = f;
+            entry.libs = isntObject(l) || l.constructor.name !== "Array" ? [] : l;
+            entry.impl = implWrapper(context, entry, f);
         } else {
             for(f in funcs) {
                 path.func = f;
@@ -210,7 +243,7 @@
                 args = arguments,
                 path = pathFor(context, funcPath),
                 entry = entryOf(registry, path),
-                queue = entry.queue, impl = entry.impl;
+                impl = entry.impl;
             if (impl) return impl.apply(context, args);
             process(context, "callComponent", [context, path, args]);
         };
@@ -242,10 +275,31 @@
 })(window);
 
 // will-jquery_adapter
-(function ($) {
+(function (document, $) {
     "use strict";
     if (! $) return;
     will.u.extend({
+        "loadLib": function (url, completeCallback) {
+            var head = document.getElementsByTagName("head")[0] || document.documentElement,
+                script = document.createElement("script"), done = false;
+            script.src = url;
+            script.onload = script.onreadystatechange = function () {
+                var rs = this.readyState;
+                if (!done && (!rs || rs === "loaded" || rs === "complete")) {
+                   done = true;
+                   completeCallback("success");
+                   script.onload = script.onreadystatechange = null;
+                   script.onerror = script.onabort = null;
+               }
+            };
+            script.onerror = script.onabort = function () {
+                done = true;
+                completeCallback("error");
+                script.onload = script.onreadystatechange = null;
+                script.onerror = script.onabort = null;
+            };
+            head.insertBefore(script, head.firstChild);
+        },
         "loadComponent": function (url, completeCallback) {
             $.ajax({
                 dataType: "html",
@@ -256,4 +310,4 @@
             });
         }
     });
-})(window.jQuery);
+})(window.document, window.jQuery);
