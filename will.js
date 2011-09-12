@@ -38,6 +38,30 @@
             fill(this, key + k, hash[k]);
         }
     }
+    function loadLib(url, completeCallback) {
+        var head = document.getElementsByTagName("head")[0] || document.documentElement,
+            script = document.createElement("script"), done = false;
+        script.src = url;
+        script.onload = script.onreadystatechange = function () {
+            var rs = this.readyState;
+            if (!done && (!rs || rs === "loaded" || rs === "complete")) {
+               done = true;
+               completeCallback("success");
+               script.onload = script.onreadystatechange = null;
+               script.onerror = script.onabort = null;
+           }
+        };
+        script.onerror = script.onabort = function () {
+            done = true;
+            completeCallback("error");
+            script.onload = script.onreadystatechange = null;
+            script.onerror = script.onabort = null;
+            if (head && script.parentNode) {
+                head.removeChild(script);
+            }
+        };
+        head.appendChild(script);
+    }
     function defaultConfig() {
         return {
             "mode": will.modes.DEV,
@@ -133,7 +157,7 @@
                 libs = entry.libs, lib;
             if (libs.length) {
                 lib = libs[0];
-                will.u.loadLib(lib, function (status) {
+                loadLib(lib, function (status) {
                     try {
                         if (status === "success") {
                             libs.shift();
@@ -279,36 +303,13 @@
     "use strict";
     if (! $) return;
     will.u.extend({
-        "loadLib": function (url, completeCallback) {
-            var head = document.getElementsByTagName("head")[0] || document.documentElement,
-                script = document.createElement("script"), done = false;
-            script.src = url;
-            script.onload = script.onreadystatechange = function () {
-                var rs = this.readyState;
-                if (!done && (!rs || rs === "loaded" || rs === "complete")) {
-                   done = true;
-                   completeCallback("success");
-                   script.onload = script.onreadystatechange = null;
-                   script.onerror = script.onabort = null;
-               }
-            };
-            script.onerror = script.onabort = function () {
-                done = true;
-                completeCallback("error");
-                script.onload = script.onreadystatechange = null;
-                script.onerror = script.onabort = null;
-                if (head && script.parentNode) {
-                    head.removeChild(script);
-                }
-            };
-            head.appendChild(script);
-        },
         "loadComponent": function (url, completeCallback) {
             $.ajax({
                 dataType: "html",
                 complete: function (xhr, status) {
                     completeCallback(xhr.status, xhr.responseText);
                 },
+                cache: false,
                 url: url
             });
         }
