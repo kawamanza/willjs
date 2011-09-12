@@ -110,11 +110,12 @@
                 return;
             }
             queue.push(args);
-            will.u.loadComponent(urlFor(context, path), function (data) {
+            will.u.loadComponent(urlFor(context, path), function (statusCode, data) {
                 try {
-                    if (isString(data)) {
-                        try{data = eval("("+data+")");}catch(e){return;}
+                    if (statusCode !== 200) {
+                        throw "could not load component: " + path;
                     }
+                    data = eval("("+data+")");
                     if (isntObject(data)) return;
                     registerFunctions(context, registry, data, path);
                     impl = entry.impl;
@@ -161,15 +162,28 @@
     function pathFor(context, funcPath) {
         var cfg = context.cfg,
             d = cfg.domains,
-            domain = d.local,
+            domainName = "local",
+            domain = d[domainName],
             packageName = cfg.defaultPackage,
             func = funcPath;
         if ( /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/.test(funcPath) ){
             func = RegExp.$3;
             packageName = RegExp.$2 || cfg.packages[func] || packageName;
-            domain = d[RegExp.$1 || "local"] || domain;
+            domainName = RegExp.$1 || domainName;
+            domain = d[domainName];
+            if (! domain) {
+                domainName = "local";
+                domain = d[domainName];
+            }
         }
-        return {domain: domain, packageName: packageName, func: func};
+        return {
+            domain: domain,
+            packageName: packageName,
+            func: func,
+            toString: function() {
+                return domainName + ":" + packageName + "." + func;
+            }
+        };
     }
     function urlFor(context, path) {
         var cfg = context.cfg,
@@ -231,10 +245,12 @@
     "use strict";
     if (! $) return;
     will.u.extend({
-        "loadComponent": function (url, successCallback) {
+        "loadComponent": function (url, completeCallback) {
             $.ajax({
                 dataType: "html",
-                success: successCallback,
+                complete: function (xhr, status) {
+                    completeCallback(xhr.status, xhr.responseText);
+                },
                 url: url
             });
         }
