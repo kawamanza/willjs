@@ -211,7 +211,7 @@
                 entry = entryOf(registry, path),
                 queue = entry.queue, impl = entry.impl;
             if (impl) return impl.apply(context, arguments);
-            context.process("callComponent", [context, path, arguments]);
+            context.process("callComponent", context, path, arguments);
         };
     }
 
@@ -220,8 +220,8 @@
         "call": function (selector) {
             return stubsTo(this, selector);
         },
-        "process": function (handler, args) {
-            process(this, handler, args);
+        "process": function (handlerName) {
+            process(this, handlerName, Array.prototype.slice.call(arguments, 1));
         },
         "modes": {DEV:0, PROD:1},
         "u.extend": extend
