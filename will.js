@@ -56,65 +56,72 @@
             }
         };
     }
-    function queueProcessor(args) {
-        var self = this,
-            r = self.lastRun,
-            s = self.lastSleep,
-            t = self.timeout,
-            inc = 5, limit = 300,
-            now = new Date().getTime();
-        if (args) {
-            self.queue.push(args);
-            if (!t || (now - r + s) > inc) {
-                if (t) clearTimeout(t);
-                self.lastSleep = inc;
-                self.lastRun = now;
-                self.timeout = setTimeout(function(){queueProcessor.call(self);}, inc);
-            }
-        } else {
-            self.lastRun = now;
-            if (self.queue.length) {
-                args = self.queue.shift();
-                s = inc;
-                self.run.apply(null, args);
-            } else {
-                s = s + inc;
-            }
-            self.lastSleep = s;
-            if (self.lastRun == now) {
-                if (s >= limit) {
-                    self.timeout = null;
-                } else {
-                    self.lastRun = new Date().getTime();
-                    self.timeout = setTimeout(function(){queueProcessor.call(self);}, s);
-                }
-            }
-        }
-    }
     function newProcessor(func) {
         return {
             queue: [],
-            lastRun: new Date().getTime() - 1000,
-            lastSleep: 1000,
+            active: false,
             run: func,
-            process: queueProcessor
+            sched: function () {
+                var self = this;
+                setTimeout(function () {self.process();}, 10);
+            },
+            process: function (args) {
+                var self = this,
+                    queue = self.queue;
+                if (args) {
+                    if (isntObject(args) || args.constructor.name != "Array") args = [args];
+                    queue.push(args);
+                    setTimeout(function () {
+                        if (queue.length && !self.active) {
+                            self.active = true;
+                            self.process();
+                        }
+                    }, 20);
+                } else {
+                    if (queue.length) {
+                        args = queue.shift();
+                        try {
+                            if (self.run.apply(self, args) !== false){
+                                self.sched();
+                            }
+                        } catch (e) {
+                            self.sched();
+                        }
+                    } else {
+                        self.active = false;
+                    }
+                }
+            }
         };
     }
     function addDefaultProcessors(processors) {
         processors.callComponent = newProcessor(function(context, path, args) {
-            var registry = context.registry, entry = entryOf(registry, path);
+            var self = this,
+                registry = context.registry,
+                entry = entryOf(registry, path),
+                queue = entry.queue,
+                impl = entry.impl;
+            if (impl) {
+                impl.apply(context, arguments);
+                return;
+            }
             queue.push(args);
             will.u.loadComponent(urlFor(context, path), function (data) {
-                if (isString(data)) {
-                    try{data = eval("("+data+")");}catch(e){return;}
-                }
-                if (isntObject(data)) return;
-                registerFunctions(registry, data, path);
-                impl = entry.impl;
-                while (queue.length) {
-                    impl.apply(context, queue.shift());
+                try {
+                    if (isString(data)) {
+                        try{data = eval("("+data+")");}catch(e){return;}
+                    }
+                    if (isntObject(data)) return;
+                    registerFunctions(registry, data, path);
+                    impl = entry.impl;
+                    while (queue.length) {
+                        impl.apply(context, queue.shift());
+                    }
+                } finally {
+                    self.sched();
                 }
             });
+            return false;
         });
     }
     function setup(context, reset, initConfig) {
@@ -174,7 +181,10 @@
     function process(context, handler, args) {
         var r = context.cfg.processors,
             p = r[handler];
-        if (p) p.process(args);
+        if (!p && typeof args === "function") {
+            p = r[handler] = newProcessor(function(f) {f();});
+        }
+        p.process(args);
     }
     function stubsTo(context, funcPath) {
         return function () {
