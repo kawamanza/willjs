@@ -1,6 +1,8 @@
 (function (window, undefined) {
     "use strict";
-    var will = {}, basicApi = {};
+    var will = {}, basicApi = {},
+        scriptIdData = "data-willjs-id",
+        document = window.document;
     window.will = will;
     function isString(value) {
         return typeof value === "string";
@@ -38,10 +40,42 @@
             fill(this, key + k, hash[k]);
         }
     }
-    function loadLib(url, completeCallback) {
+    function libIdOf(src) {
+        var sid = undefined, seg;
+        if (isString(src)) {
+            if ( /^([\w\-\.]+)\@(.+)$/.test(src) ) {
+                sid = [RegExp.$1, RegExp.$2];
+            } else {
+                seg = src.split(/[\?#]/)[0].split(/\//);
+                seg = seg[seg.length -1];
+                sid = [
+                    /^([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.js$/.test(seg)
+                        ? RegExp.$1
+                        : seg,
+                    src
+                ];
+            }
+        } else {
+            sid = [src.getAttribute(scriptIdData), src.src];
+            if (! sid[0]) sid = libIdOf(sid[1]);
+        }
+        return sid;
+    }
+    function isLoaded(src) {
+        var scripts = document.getElementsByTagName("script"),
+            sid = libIdOf(src)[0], i, len = scripts.length;
+        for (i = 0; i < len; ) {
+            if (libIdOf(scripts[i++])[0] === sid) {
+                return true;
+            }
+        }
+        return false;
+    }
+    function loadLib(src, completeCallback) {
         var head = document.getElementsByTagName("head")[0] || document.documentElement,
-            script = document.createElement("script"), done = false;
-        script.src = url;
+            script = document.createElement("script"), done = false, sid = libIdOf(src);
+        script.setAttribute(scriptIdData, sid[0]);
+        script.src = sid[1];
         script.onload = script.onreadystatechange = function () {
             var rs = this.readyState;
             if (!done && (!rs || rs === "loaded" || rs === "complete")) {
@@ -130,7 +164,7 @@
                 queue = entry.queue,
                 impl = entry.impl;
             if (impl) {
-                impl.apply(context, arguments);
+                impl.apply(undefined, arguments);
                 return;
             }
             queue.push(args);
@@ -144,7 +178,7 @@
                     registerFunctions(context, registry, data, path);
                     impl = entry.impl;
                     while (queue.length) {
-                        impl.apply(context, queue.shift());
+                        impl.apply(undefined, queue.shift());
                     }
                 } finally {
                     self.sched();
@@ -157,19 +191,24 @@
                 libs = entry.libs, lib;
             if (libs.length) {
                 lib = libs[0];
-                loadLib(lib, function (status) {
-                    try {
-                        if (status === "success") {
-                            libs.shift();
-                            entry.impl.apply(entry, args);
+                if (isLoaded(lib)) {
+                    libs.shift();
+                    entry.impl.apply(undefined, args);
+                } else {
+                    loadLib(lib, function (status) {
+                        try {
+                            if (status === "success") {
+                                libs.shift();
+                                entry.impl.apply(undefined, args);
+                            }
+                        } finally {
+                            self.sched();
                         }
-                    } finally {
-                        self.sched();
-                    }
-                });
-                return false;
+                    });
+                    return false;
+                }
             } else {
-                entry.impl.apply(entry, args);
+                entry.impl.apply(undefined, args);
             }
         });
     }
@@ -268,7 +307,7 @@
                 path = pathFor(context, funcPath),
                 entry = entryOf(registry, path),
                 impl = entry.impl;
-            if (impl) return impl.apply(context, args);
+            if (impl) return impl.apply(undefined, args);
             process(context, "callComponent", [context, path, args]);
         };
     }
