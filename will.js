@@ -2,6 +2,7 @@
     "use strict";
     var will = {}, basicApi = {},
         scriptIdData = "data-willjs-id",
+        slice = Array.prototype.slice,
         document = window.document;
     window.will = will;
     function isString(value) {
@@ -168,9 +169,10 @@
                 return;
             }
             queue.push(args);
-            will.u.loadComponent(urlFor(context, path), function (statusCode, data) {
+            will.u.loadComponent(context, urlFor(context, path), function (statusCode, data) {
                 try {
                     if (statusCode !== 200) {
+                        queue.shift();
                         throw "could not load component: " + path;
                     }
                     data = eval("("+data+")");
@@ -200,6 +202,8 @@
                             if (status === "success") {
                                 libs.shift();
                                 entry.impl.apply(undefined, args);
+                            } else {
+                                entry.rescue();
                             }
                         } finally {
                             self.sched();
@@ -225,7 +229,7 @@
         var pn = path.packageName,
             p = registry[pn] || (registry[pn] = {}),
             f = path.func;
-        return p[f] || (p[f] = {queue:[]});
+        return p[f] || (p[f] = {queue:[], rescue: function () {delete p[f];}});
     }
     function implWrapper(context, entry, f) {
         var func = function () {return f.apply(context, arguments);};
@@ -311,6 +315,17 @@
             process(context, "callComponent", [context, path, args]);
         };
     }
+    function requireLibs(context, libs) {
+        var entry = {queue:[], libs: libs};
+        return function (f, rescue) {
+            if (entry.impl) return;
+            if (!isFunction(f)) f = function () {};
+            entry.impl = implWrapper(context, entry, f);
+            if (!isFunction(rescue)) rescue = function () {};
+            entry.rescue = rescue;
+            entry.impl();
+        };
+    }
 
     // The Public API
     extend.call(basicApi, {
@@ -318,7 +333,10 @@
             return stubsTo(this, selector);
         },
         "process": function (handlerName) {
-            process(this, handlerName, Array.prototype.slice.call(arguments, 1));
+            process(this, handlerName, slice.call(arguments, 1));
+        },
+        "use": function() {
+            return requireLibs(this, slice.call(arguments, 0));
         },
         "modes": {DEV:0, PROD:1},
         "u.extend": extend
