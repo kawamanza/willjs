@@ -356,19 +356,35 @@
 })(window);
 
 // will-jquery_adapter
-(function (document, $) {
-    "use strict";
-    if (! $) return;
+(function (window) {
+    var will = window.will, loaded = false;
+    function loadComponent(context, url, completeCallback) {
+        window.jQuery.ajax({
+            dataType: "html",
+            complete: function (xhr, status) {
+                completeCallback(xhr.status, xhr.responseText);
+            },
+            cache: false,
+            url: url
+        });
+    }
     will.u.extend({
-        "loadComponent": function (url, completeCallback) {
-            $.ajax({
-                dataType: "html",
-                complete: function (xhr, status) {
-                    completeCallback(xhr.status, xhr.responseText);
-                },
-                cache: false,
-                url: url
-            });
+        "loadComponent": function (context, url, completeCallback) {
+            if (loaded) {
+                completeCallback(500, "");
+                return;
+            }
+            context.use(
+                "http://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.min.js"
+                )(function () {
+                    will.u.loadComponent = loadComponent;
+                    loaded = true;
+                    loadComponent(context, url, completeCallback);
+                }, function () {
+                    loaded = true;
+                    completeCallback(500, "");
+                });
         }
     });
-})(window.document, window.jQuery);
+})(window);
+
