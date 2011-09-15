@@ -228,7 +228,7 @@
     }
     function implWrapper(context, entry, f) {
         var func = function () {return f.apply(context, arguments);};
-        return entry.libs.length ? function () {
+        return function () {
             var args = arguments;
             if (entry.libs.length) {
                 process(context, "loadDependenciesAndCall", [entry, args]);
@@ -236,7 +236,7 @@
                 entry.impl = func;
                 return f.apply(context, args);
             }
-        } : func;
+        };
     }
     function registerFunctions(context, registry, funcs, path) {
         if (isntObject(funcs)) return;
