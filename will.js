@@ -162,26 +162,21 @@
             var self = this,
                 registry = context.registry,
                 entry = entryOf(registry, path),
-                queue = entry.queue,
                 impl = entry.impl;
             if (impl) {
                 impl.apply(undefined, args);
                 return;
             }
-            queue.push(args);
             will.u.loadComponent(context, urlFor(context, path), function (statusCode, data) {
                 try {
                     if (statusCode !== 200) {
-                        queue.shift();
                         throw "could not load component: " + path;
                     }
                     data = eval("("+data+")");
                     if (isntObject(data)) return;
                     registerFunctions(context, registry, data, path);
                     impl = entry.impl;
-                    while (queue.length) {
-                        impl.apply(undefined, queue.shift());
-                    }
+                    if (impl) impl.apply(undefined, args);
                 } finally {
                     self.sched();
                 }
@@ -229,7 +224,7 @@
         var pn = path.packageName,
             p = registry[pn] || (registry[pn] = {}),
             f = path.func;
-        return p[f] || (p[f] = {queue:[], rescue: function () {delete p[f];}});
+        return p[f] || (p[f] = {rescue: function () {delete p[f];}});
     }
     function implWrapper(context, entry, f) {
         var func = function () {return f.apply(context, arguments);};
@@ -316,7 +311,7 @@
         };
     }
     function requireLibs(context, libs) {
-        var entry = {queue:[], libs: libs};
+        var entry = {libs: libs};
         return function (loadCallback) {
             if (entry.impl) return;
             var func, rescue;
