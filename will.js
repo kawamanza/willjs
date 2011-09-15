@@ -82,15 +82,15 @@
             if (!done && (!rs || rs === "loaded" || rs === "complete")) {
                done = true;
                completeCallback("success");
-               script.onload = script.onreadystatechange = null;
-               script.onerror = script.onabort = null;
+               script.onload = script.onreadystatechange = undefined;
+               script.onerror = script.onabort = undefined;
            }
         };
         script.onerror = script.onabort = function () {
             done = true;
             completeCallback("error");
-            script.onload = script.onreadystatechange = null;
-            script.onerror = script.onabort = null;
+            script.onload = script.onreadystatechange = undefined;
+            script.onerror = script.onabort = undefined;
             if (head && script.parentNode) {
                 head.removeChild(script);
             }
