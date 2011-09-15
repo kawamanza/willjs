@@ -317,11 +317,16 @@
     }
     function requireLibs(context, libs) {
         var entry = {queue:[], libs: libs};
-        return function (f, rescue) {
+        return function (loadCallback) {
             if (entry.impl) return;
-            if (!isFunction(f)) f = function () {};
-            entry.impl = implWrapper(context, entry, f);
-            if (!isFunction(rescue)) rescue = function () {};
+            var func, rescue;
+            if (isFunction(loadCallback)) {
+                func = function () {loadCallback("success");};
+                rescue = function () {loadCallback("error");};
+            } else {
+                func = rescue = function () {};
+            }
+            entry.impl = implWrapper(context, entry, func);
             entry.rescue = rescue;
             entry.impl();
         };
@@ -364,7 +369,7 @@
             complete: function (xhr, status) {
                 completeCallback(xhr.status, xhr.responseText);
             },
-            cache: false,
+            cache: (context.cfg.mode === will.modes.PROD),
             url: url
         });
     }
@@ -375,16 +380,16 @@
                 return;
             }
             context.use(
-                "http://ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.min.js"
-                )(function () {
-                    will.u.loadComponent = loadComponent;
-                    loaded = true;
-                    loadComponent(context, url, completeCallback);
-                }, function () {
-                    loaded = true;
-                    completeCallback(500, "");
+                "//ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.min.js"
+                )(function (status) {
+                    if (status === "success") {
+                        will.u.loadComponent = loadComponent;
+                        loadComponent(context, url, completeCallback);
+                    } else {
+                        loaded = true;
+                        completeCallback(500, "");
+                    }
                 });
         }
     });
 })(window);
-
