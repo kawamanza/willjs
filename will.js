@@ -165,7 +165,7 @@
                 queue = entry.queue,
                 impl = entry.impl;
             if (impl) {
-                impl.apply(undefined, arguments);
+                impl.apply(undefined, args);
                 return;
             }
             queue.push(args);
