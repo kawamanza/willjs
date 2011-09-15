@@ -76,4 +76,25 @@ When grouping components inside a package, the JSON components file must be like
         otherComponent: { /* and so on... */ }
     }
 
+## Sequential Processors
+
+    var shouldWaitForCallback = true;                          // just for this example
+    will.unstackWith("processorName", function (param1, param2) {
+        var processor = this;
+        if (shouldWaitForCallback) {                           // do something async?
+            doSomethingAsynchronously(function () {
+                try {
+                    // something you plan to do
+                } finally {
+                    processor.sched();                         // do not forget this
+                }
+            });
+            return false;                                      // let the schedule with me
+        } else {
+            // something you want to do synchronously
+            // (you must return something other than false)
+        }
+    });
+    will.stackUp("processorName", param1, param2);             // do this job after all, please
+
 Enjoy in moderation!

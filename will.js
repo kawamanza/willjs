@@ -332,11 +332,15 @@
         "call": function (selector) {
             return stubsTo(this, selector);
         },
-        "process": function (handlerName) {
-            process(this, handlerName, slice.call(arguments, 1));
-        },
         "use": function() {
             return requireLibs(this, slice.call(arguments, 0));
+        },
+        "unstackWith": function (processorName, func) {
+            var r = this.cfg.processors, p = r[processorName];
+            if (!p) this.cfg.processors[processorName] = newProcessor(func);
+        },
+        "stackUp": function (processorName) {
+            process(this, processorName, slice.call(arguments, 1));
         },
         "modes": {DEV:0, PROD:1},
         "u.extend": extend
@@ -357,7 +361,7 @@
 
 // will-jquery_adapter
 (function (window) {
-    var will = window.will, loaded = false;
+    var will = window.will, loaded = false, loadComponentName = "loadComponent";
     function loadComponent(context, url, completeCallback) {
         window.jQuery.ajax({
             dataType: "html",
@@ -368,23 +372,21 @@
             url: url
         });
     }
-    will.u.extend({
-        "loadComponent": function (context, url, completeCallback) {
-            if (loaded) {
-                completeCallback(500, "");
-                return;
-            }
-            context.use(
-                "//ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.min.js"
-                )(function (status) {
-                    if (status === "success") {
-                        will.u.loadComponent = loadComponent;
-                        loadComponent(context, url, completeCallback);
-                    } else {
-                        loaded = true;
-                        completeCallback(500, "");
-                    }
-                });
+    will.u[loadComponentName] = function (context, url, completeCallback) {
+        if (loaded) {
+            completeCallback(500, "");
+            return;
         }
-    });
+        context.use(
+            "//ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.min.js"
+        )(function (status) {
+            if (status === "success") {
+                will.u[loadComponentName] = loadComponent;
+                loadComponent(context, url, completeCallback);
+            } else {
+                loaded = true;
+                completeCallback(500, "");
+            }
+        });
+    };
 })(window);
