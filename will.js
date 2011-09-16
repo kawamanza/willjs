@@ -3,6 +3,8 @@
     var will = {}, basicApi = {},
         scriptIdData = "data-willjs-id",
         slice = Array.prototype.slice,
+        loadComponentLoaded = false,
+        loadComponentMethodName = "loadComponent",
         document = window.document;
     window.will = will;
     function isString(value) {
@@ -97,6 +99,16 @@
         };
         head.appendChild(script);
     }
+    function loadComponent_jQuery(context, url, completeCallback) {
+        window.jQuery.ajax({
+            dataType: "html",
+            complete: function (xhr, status) {
+                completeCallback(xhr.status, xhr.responseText);
+            },
+            cache: (context.cfg.mode === will.modes.PROD),
+            url: url
+        });
+    }
     function defaultConfig() {
         return {
             "mode": will.modes.DEV,
@@ -167,7 +179,7 @@
                 impl.apply(undefined, args);
                 return;
             }
-            will.u.loadComponent(context, urlFor(context, path), function (statusCode, data) {
+            will.u[loadComponentMethodName](context, urlFor(context, path), function (statusCode, data) {
                 try {
                     if (statusCode !== 200) {
                         throw "could not load component: " + path;
@@ -198,7 +210,7 @@
                                 libs.shift();
                                 entry.impl.apply(undefined, args);
                             } else {
-                                entry.rescue();
+                                entry.rescue.apply(undefined, args);
                             }
                         } finally {
                             self.sched();
@@ -224,7 +236,7 @@
         var pn = path.packageName,
             p = registry[pn] || (registry[pn] = {}),
             f = path.func;
-        return p[f] || (p[f] = {rescue: function () {delete p[f];}});
+        return p[f] || (p[f] = {rescue: function () {/*delete p[f];*/}});
     }
     function implWrapper(context, entry, f) {
         var func = function () {return f.apply(context, arguments);};
@@ -356,37 +368,25 @@
         }
     });
     extend.call(will, basicApi);
-    setup(will, false);
-})(window);
 
-// will-jquery_adapter
-(function (window) {
-    var will = window.will, loaded = false, loadComponentName = "loadComponent";
-    function loadComponent(context, url, completeCallback) {
-        window.jQuery.ajax({
-            dataType: "html",
-            complete: function (xhr, status) {
-                completeCallback(xhr.status, xhr.responseText);
-            },
-            cache: (context.cfg.mode === will.modes.PROD),
-            url: url
-        });
-    }
-    will.u[loadComponentName] = function (context, url, completeCallback) {
-        if (loaded) {
+    basicApi.u[loadComponentMethodName] = function (context, url, completeCallback) {
+        if (loadComponentLoaded) {
             completeCallback(500, "");
             return;
         }
         context.use(
-            "//ajax.googleapis.com/ajax/libs/jquery/1.6/jquery.min.js"
+            "//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"
         )(function (status) {
             if (status === "success") {
-                will.u[loadComponentName] = loadComponent;
-                loadComponent(context, url, completeCallback);
+                basicApi.u[loadComponentMethodName] = loadComponent_jQuery;
+                loadComponent_jQuery(context, url, completeCallback);
             } else {
-                loaded = true;
+                loadComponentLoaded = true;
                 completeCallback(500, "");
             }
         });
     };
+
+    // Initial setup
+    setup(will, false);
 })(window);
