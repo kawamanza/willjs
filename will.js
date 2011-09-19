@@ -117,7 +117,7 @@
                 "local": "/javascripts/will-functions/"
             },
             "addDomain": function (domainName, urlPrefix) {
-                this.domains[domainName] = urlPrefix + (/\/$/.test(urlPrefix) ? "/" : "");
+                this.domains[domainName] = urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/");
             },
             "packages": {},
             "defaultPackage": "root",
