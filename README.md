@@ -13,13 +13,13 @@
         config.mode = will.modes.DEV;                      // default mode
         config.addDomain(
             "local",                                       // default domain
-            "/javascripts/will-functions/");               // default component domain (repository)
+            "/javascripts/will/");                         // default component domain (repository)
         config.defaultPackage = "root";                    // default package
     });
 
 ## Components
 
-    // {host}/javascripts/will-functions/doSomething.json
+    // {host}/javascripts/will/doSomething.json
     {
         // impl: function () {/* the component, or... */}, // optional
         getImpl: function (will) {
@@ -41,23 +41,23 @@
 
 In this mode, the components are fetched by your entire path location. Example:
 
-    will.call("doSomething")();                                // /javascripts/will-functions/doSomething.json
+    will.call("doSomething")();                                // /javascripts/will/doSomething.json
     will.call("local:root.doSomething")();                     // same as above
-    will.call("mypack.doSomething")();                         // /javascripts/will-functions/mypack/doSomething.json
+    will.call("mypack.doSomething")();                         // /javascripts/will/mypack/doSomething.json
     will.call("local:mypack.doSomething")();                   // same as above
 
 ### PROD mode
 
 In this mode, the components are fetched by your package location. Example:
 
-    will.call("doSomething")();                                // /javascripts/will-functions/root.json
+    will.call("doSomething")();                                // /javascripts/will/root.json
     will.call("local:root.doSomething")();                     // same as above
-    will.call("mypack.doSomething")();                         // /javascripts/will-functions/mypack.json
+    will.call("mypack.doSomething")();                         // /javascripts/will/mypack.json
     will.call("local:mypack.doSomething")();                   // same as above
 
 When grouping components inside a package, the JSON components file must be like below:
 
-    // {host}/javascripts/will-functions/root.json
+    // {host}/javascripts/will/root.json
     {
         doSomething: {
             // impl: function () {/* the component, or... */}, // optional
@@ -96,5 +96,19 @@ When grouping components inside a package, the JSON components file must be like
         }
     });
     will.stackUp("processorName", param1, param2);             // do this job after all, please
+
+## Customized Will.js
+
+    window.myWill = {};
+    will.configure.call(window.myWill, function (config) {
+        config.mode = will.modes.DEV;                      // default mode
+        config.addDomain(
+            "local",                                       // default domain
+            "/javascripts/will/");                         // default component domain (repository)
+        config.defaultPackage = "root";                    // default package
+    });
+    // Public API
+    myWill.call("componentName")(param1, param2);         // invokes a component
+    myWill.use("/jquery.js", "/jquery-ui.js")();          // loads required libs if not present yet.
 
 Enjoy in moderation!

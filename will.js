@@ -114,7 +114,7 @@
             "mode": will.modes.DEV,
             "processors": {},
             "domains": {
-                "local": "/javascripts/will-functions/"
+                "local": "/javascripts/will/"
             },
             "addDomain": function (domainName, urlPrefix) {
                 this.domains[domainName] = urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/");
