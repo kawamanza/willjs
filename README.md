@@ -79,23 +79,23 @@ When grouping components inside a package, the JSON components file must be like
 ## Sequential Processors
 
     var shouldWaitForCallback = true;                          // just for this example
-    will.unstackWith("processorName", function (param1, param2) {
+    will.addProcessor("processorName", function (param1, param2) {
         var processor = this;
         if (shouldWaitForCallback) {                           // do something async?
             doSomethingAsynchronously(function () {
                 try {
                     // something you plan to do
                 } finally {
-                    processor.sched();                         // do not forget this
+                    processor.sched();                         // do the next process on the stack
                 }
             });
-            return false;                                      // let the schedule with me
+            return false;                                      // trust me, let me schedule the next process
         } else {
             // something you want to do synchronously
             // (you must return something other than false)
         }
     });
-    will.stackUp("processorName", param1, param2);             // do this job after all, please
+    will.process("processorName", param1, param2);             // schedule this job after all
 
 ## Customized Will.js
 

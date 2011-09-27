@@ -347,11 +347,11 @@
         "use": function() {
             return requireLibs(this, slice.call(arguments, 0));
         },
-        "unstackWith": function (processorName, func) {
+        "addProcessor": function (processorName, func) {
             var r = this.cfg.processors, p = r[processorName];
             if (!p) this.cfg.processors[processorName] = newProcessor(func);
         },
-        "stackUp": function (processorName) {
+        "process": function (processorName) {
             process(this, processorName, slice.call(arguments, 1));
         },
         "modes": {DEV:0, PROD:1},
