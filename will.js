@@ -259,6 +259,7 @@
             entry = entryOf(registry, path);
             entry.libs = isntObject(l) || l.constructor.name !== "Array" ? [] : l;
             entry.impl = implWrapper(context, entry, f);
+            entry.rescue = funcs.rescue || entry.rescue;
         } else {
             for(f in funcs) {
                 path.func = f;

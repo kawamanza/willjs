@@ -29,6 +29,7 @@
                 // do something the user requests to
             };
         },
+        rescue: function () {/* fallback */},              // error loading libs
         libs: [                                            // required libs (optional)
             "/javascripts/lib1.js",
             "/javascripts/lib2.js"
@@ -68,6 +69,7 @@ When grouping components inside a package, the JSON components file must be like
                     // do something the user requests to
                 };
             },
+            rescue: function () {/* fallback */},              // error loading libs
             libs: [                                            // required libs (optional)
                 "/javascripts/lib1.js",
                 "/javascripts/lib2.js"
