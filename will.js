@@ -3,12 +3,16 @@
     var will = {}, basicApi = {},
         scriptIdData = "data-willjs-id",
         slice = Array.prototype.slice,
+        toString = Object.prototype.toString,
         loadComponentLoaded = false,
         loadComponentMethodName = "loadComponent",
         document = window.document;
     window.will = will;
     function isString(value) {
         return typeof value === "string";
+    }
+    function isArray(value) {
+        return toString.call(value) === "[object Array]"
     }
     function isntObject(value) {
         return typeof value !== "object";
@@ -26,7 +30,7 @@
             root[key] = value;
         } else {
             v = root[key];
-            if (isntObject(v) || v.constructor.name == "Array") {
+            if (isntObject(v) || isArray(v)) {
                 v = {};
                 root[key] = v;
             }
@@ -143,7 +147,7 @@
                 var self = this,
                     queue = self.queue;
                 if (arguments.length) {
-                    if (isntObject(args) || args.constructor.name != "Array") args = [args];
+                    if (isntObject(args) || !isArray(args)) args = [args];
                     queue.push(args);
                     setTimeout(function () {
                         if (queue.length && !self.active) {
@@ -257,7 +261,7 @@
             l = funcs.libs;
         if (isFunction(f)) {
             entry = entryOf(registry, path);
-            entry.libs = isntObject(l) || l.constructor.name !== "Array" ? [] : l;
+            entry.libs = isntObject(l) || !isArray(l) ? [] : l;
             entry.impl = implWrapper(context, entry, f);
             entry.rescue = funcs.rescue || entry.rescue;
         } else {
