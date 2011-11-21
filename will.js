@@ -394,4 +394,4 @@
 
     // Initial setup
     setup(will, false);
-})(window);
+})(window, null);
