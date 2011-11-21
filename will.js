@@ -118,10 +118,10 @@
             "mode": will.modes.DEV,
             "processors": {},
             "domains": {
-                "local": "/javascripts/will/"
+                "local": ["json", "/javascripts/will/"]
             },
-            "addDomain": function (domainName, urlPrefix) {
-                this.domains[domainName] = urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/");
+            "addDomain": function (domainName, urlPrefix, asJS) {
+                this.domains[domainName] = [(asJS ? "js" : "json"), urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/")];
             },
             "packages": {},
             "defaultPackage": "root",
@@ -177,26 +177,40 @@
         processors.callComponent = newProcessor(function (context, path, args) {
             var self = this,
                 registry = context.registry,
+                url = urlFor(context, path),
                 entry = entryOf(registry, path),
                 impl = entry.impl;
             if (impl) {
                 impl.apply(undefined, args);
                 return;
             }
-            will.u[loadComponentMethodName](context, urlFor(context, path), function (statusCode, data) {
-                try {
-                    if (statusCode !== 200) {
-                        throw "could not load component: " + path;
+            if (path.format == "js") {
+                url = path.toString().replace(/[:\.]/g, "_") + "@" + url;
+                requireLibs(context, url)(function (status) {
+                    try {
+                        if (status == "success") {
+                            context.call(path.toString()).apply(undefined, args);
+                        }
+                    } finally {
+                        self.sched();
                     }
-                    data = eval("("+data+")");
-                    if (isntObject(data)) return;
-                    registerFunctions(context, registry, data, path);
-                    impl = entry.impl;
-                    if (impl) impl.apply(undefined, args);
-                } finally {
-                    self.sched();
-                }
-            });
+                });
+            } else {
+                will.u[loadComponentMethodName](context, url, function (statusCode, data) {
+                    try {
+                        if (statusCode !== 200) {
+                            throw "could not load component: " + path;
+                        }
+                        data = eval("("+data+")");
+                        if (isntObject(data)) return;
+                        registerFunctions(context, registry, data, path);
+                        impl = entry.impl;
+                        if (impl) impl.apply(undefined, args);
+                    } finally {
+                        self.sched();
+                    }
+                });
+            }
             return false;
         });
         processors.loadDependenciesAndCall = newProcessor(function (entry, args) {
@@ -275,21 +289,17 @@
         var cfg = context.cfg,
             d = cfg.domains,
             domainName = "local",
-            domain = d[domainName],
             packageName = cfg.defaultPackage,
             func = funcPath;
         if ( /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/.test(funcPath) ){
             func = RegExp.$3;
             packageName = RegExp.$2 || cfg.packages[func] || packageName;
             domainName = RegExp.$1 || domainName;
-            domain = d[domainName];
-            if (! domain) {
-                domainName = "local";
-                domain = d[domainName];
-            }
         }
+        if (!d[domainName]) domainName = "local"
         return {
-            domain: domain,
+            format: d[domainName][0],
+            domain: d[domainName][1],
             packageName: packageName,
             func: func,
             toString: function() {
@@ -306,7 +316,7 @@
                 : pn == cfg.defaultPackage
                     ? f
                     : pn + "/" + f)
-            + ".json";
+            + "." + path.format;
     }
     function process(context, handler, args) {
         var r = context.cfg.processors,
@@ -349,8 +359,11 @@
         "call": function (selector) {
             return stubsTo(this, selector);
         },
-        "use": function() {
+        "use": function () {
             return requireLibs(this, slice.call(arguments, 0));
+        },
+        "addComponent": function (selector, json) {
+            return registerFunctions(this, this.registry, json, selector);
         },
         "addProcessor": function (processorName, func) {
             var r = this.cfg.processors, p = r[processorName];

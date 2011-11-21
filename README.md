@@ -11,13 +11,23 @@
 
     will.configure(function (config) {
         config.mode = will.modes.DEV;                      // default mode
+
         config.addDomain(
             "local",                                       // default domain
-            "/javascripts/will/");                         // default component domain (repository)
+            "/javascripts/will/",                          // default component domain (repository)
+            false);                                        // load by ajax (default)
+
+        config.addDomain(
+            "remote",                                      // another domain sample
+            "/javascripts/will-scripts/",                  // components repository
+            true);                                         // load as script
+
         config.defaultPackage = "root";                    // default package
     });
 
 ## Components
+
+The components are automatically loaded by AJAX and stored on Will's registry.
 
     // {host}/javascripts/will/doSomething.json
     {
@@ -35,6 +45,26 @@
             "/javascripts/lib2.js"
         ]
     }
+
+### Adding components directly
+
+If you prefere to load components as script, you need to perform the instruction below:
+
+    will.addComponent("doSomething", {
+        // impl: function () {/* the component, or... */}, // optional
+        getImpl: function (will) {
+            // do something before return the component
+            return function (param1, param2) {
+                var will = this;
+                // do something the user requests to
+            };
+        },
+        rescue: function () {/* fallback */},              // error loading libs
+        libs: [                                            // required libs (optional)
+            "/javascripts/lib1.js",
+            "/javascripts/lib2.js"
+        ]
+    });
 
 ## Modes
 
