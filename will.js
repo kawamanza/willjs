@@ -1,3 +1,12 @@
+/*!
+ * Will.js JavaScript Library v1.0
+ * http://github.com/kawamanza/will.js
+ *
+ * Copyright 2011, Marcelo Manzan
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ *
+ * Date: Tue Nov 22 00:06:48 2011 -0200
+ */
 (function (window, undefined) {
     "use strict";
     var will = {}, basicApi = {},
