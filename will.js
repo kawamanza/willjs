@@ -187,12 +187,8 @@
             if (path.format == "js") {
                 url = path.toString().replace(/[:\.]/g, "_") + "@" + url;
                 requireLibs(context, url)(function (status) {
-                    try {
-                        if (status == "success") {
-                            context.call(path.toString()).apply(undefined, args);
-                        }
-                    } finally {
-                        self.sched();
+                    if (status == "success") {
+                        context.call(path).apply(undefined, args);
                     }
                 });
             } else {
@@ -210,8 +206,8 @@
                         self.sched();
                     }
                 });
+                return false;
             }
-            return false;
         });
         processors.loadDependenciesAndCall = newProcessor(function (entry, args) {
             var self = this,
@@ -290,8 +286,8 @@
             d = cfg.domains,
             domainName = "local",
             packageName = cfg.defaultPackage,
-            func = funcPath;
-        if ( /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/.test(funcPath) ){
+            func = funcPath.toString();
+        if ( /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/.test(func) ){
             func = RegExp.$3;
             packageName = RegExp.$2 || cfg.packages[func] || packageName;
             domainName = RegExp.$1 || domainName;
