@@ -1,11 +1,11 @@
 /*!
- * Will.js JavaScript Library v1.0
+ * Will.js JavaScript Library v1.0beta
  * http://github.com/kawamanza/will.js
  *
  * Copyright 2011, Marcelo Manzan
  * Dual licensed under the MIT or GPL Version 2 licenses.
  *
- * Date: Tue Nov 22 00:06:48 2011 -0200
+ * Date: Tue Nov 22 16:06:48 2011 -0200
  */
 (function (window, undefined) {
     "use strict";
@@ -195,9 +195,14 @@
             }
             if (path.format == "js") {
                 url = path.toString().replace(/[:\.]/g, "_") + "@" + url;
-                requireLibs(context, url)(function (status) {
-                    if (status == "success") {
-                        context.call(path).apply(undefined, args);
+                requireLibs(context, [url])(function (status) {
+                    try {
+                        if (status == "success") {
+                            impl = entry.impl;
+                            if (impl) impl.apply(undefined, args);
+                        }
+                    } finally {
+                        self.sched();
                     }
                 });
             } else {
@@ -215,8 +220,8 @@
                         self.sched();
                     }
                 });
-                return false;
             }
+            return false;
         });
         processors.loadDependenciesAndCall = newProcessor(function (entry, args) {
             var self = this,
@@ -368,7 +373,8 @@
             return requireLibs(this, slice.call(arguments, 0));
         },
         "addComponent": function (selector, json) {
-            return registerFunctions(this, this.registry, json, selector);
+            var context = this;
+            return registerFunctions(context, context.registry, json, pathFor(context, selector));
         },
         "addProcessor": function (processorName, func) {
             var r = this.cfg.processors, p = r[processorName];
