@@ -277,8 +277,8 @@
     function entryOf(registry, path) {
         var pn = path.packageName,
             p = registry[pn] || (registry[pn] = {}),
-            f = path.func;
-        return p[f] || (p[f] = {rescue: function () {/*delete p[f];*/}});
+            n = path.name;
+        return p[n] || (p[n] = {rescue: function () {/*delete p[n];*/}});
     }
     function renderWrapper(context, template, method, f) {
         var func = function () {return f.apply(template, arguments);};
@@ -325,41 +325,41 @@
             entry.rescue = funcs.rescue || entry.rescue;
         } else {
             for(f in funcs) {
-                path.func = f;
+                path.name = f;
                 registerFunctions(context, registry, funcs[f], path);
             }
         }
     }
-    function pathFor(context, funcPath) {
+    function pathFor(context, strPath, format) {
         var cfg = context.cfg,
             d = cfg.domains,
             domainName = "local",
             packageName = cfg.defaultPackage,
-            func = funcPath.toString();
-        if ( /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/.test(func) ){
-            func = RegExp.$3;
-            packageName = RegExp.$2 || cfg.packages[func] || packageName;
+            name = strPath.toString();
+        if ( /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/.test(name) ){
+            name = RegExp.$3;
+            packageName = RegExp.$2 || cfg.packages[name] || packageName;
             domainName = RegExp.$1 || domainName;
         }
         if (!d[domainName]) domainName = "local"
         return {
-            format: d[domainName][0],
+            format: format || d[domainName][0],
             domain: d[domainName][1],
             packageName: packageName,
-            func: func,
+            name: name,
             toString: function() {
-                return domainName + ":" + packageName + "." + func;
+                return domainName + ":" + packageName + "." + name;
             }
         };
     }
     function urlFor(context, path) {
         var cfg = context.cfg,
-            pn = path.packageName, f = path.func;
+            pn = path.packageName, n = path.name;
         return path.domain
-            + (cfg.mode == will.modes.PROD
+            + (cfg.mode == will.modes.PROD && path.format != "wtpl"
                 ? pn
                 : pn == cfg.defaultPackage
-                    ? f
+                    ? n
                     : pn + "/" + f)
             + "." + path.format;
     }
