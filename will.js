@@ -280,6 +280,27 @@
             f = path.func;
         return p[f] || (p[f] = {rescue: function () {/*delete p[f];*/}});
     }
+    function renderWrapper(context, template, method, f) {
+        var func = function () {return f.apply(template, arguments);};
+        return function () {
+            var args = arguments;
+            if (!template.content) {
+                process(context, "loadTemplateAndCall", [context, template, method, args]);
+            } else if (template.content.deps.style.length) {
+                process(context, "loadStylesAndCall", [context, template, method, args]);
+            } else if (template.content.deps.trigger.length) {
+                requireLibs(context, template.content.deps.trigger)(function (status) {
+                    if (status == "success") {
+                        template[method] = func;
+                        f.apply(template, args);
+                    }
+                });
+            } else {
+                template[method] = func;
+                f.apply(template, args);
+            }
+        };
+    }
     function implWrapper(context, entry, f) {
         var func = function () {return f.apply(context, arguments);};
         return function () {
