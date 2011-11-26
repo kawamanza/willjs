@@ -87,29 +87,33 @@
         }
         return false;
     }
-    function loadLib(src, completeCallback) {
-        var head = document.getElementsByTagName("head")[0] || document.documentElement,
-            script = document.createElement("script"), done = false, sid = tagIdOf(src);
-        script.setAttribute(assetIdData, sid[0]);
-        script.src = sid[1];
-        script.onload = script.onreadystatechange = function () {
+    function bindLoadBehaviourTo(element, parent, completeCallback) {
+        var done = false;
+        element.onload = element.onreadystatechange = function () {
             var rs = this.readyState;
             if (!done && (!rs || rs === "loaded" || rs === "complete")) {
                done = true;
                completeCallback("success");
-               script.onload = script.onreadystatechange = undefined;
-               script.onerror = script.onabort = undefined;
+               element.onload = element.onreadystatechange = undefined;
+               element.onerror = element.onabort = undefined;
            }
         };
-        script.onerror = script.onabort = function () {
+        element.onerror = element.onabort = function () {
             done = true;
             completeCallback("error");
-            script.onload = script.onreadystatechange = undefined;
-            script.onerror = script.onabort = undefined;
-            if (head && script.parentNode) {
-                head.removeChild(script);
+            element.onload = element.onreadystatechange = undefined;
+            element.onerror = element.onabort = undefined;
+            if (parent && element.parentNode) {
+                parent.removeChild(element);
             }
         };
+    }
+    function loadLib(src, completeCallback) {
+        var head = document.getElementsByTagName("head")[0] || document.documentElement,
+            script = document.createElement("script"), sid = tagIdOf(src);
+        script.setAttribute(assetIdData, sid[0]);
+        script.src = sid[1];
+        bindLoadBehaviourTo(script, head, completeCallback);
         head.appendChild(script);
     }
     function loadComponent_jQuery(context, url, completeCallback) {
