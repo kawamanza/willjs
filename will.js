@@ -73,15 +73,15 @@
             }
         } else {
             sid = [asset.getAttribute(assetIdData), link ? asset.href : asset.src];
-            if (! sid[0]) sid = tagIdOf(sid[1]);
+            if (! sid[0]) sid = tagIdOf(sid[1], link);
         }
         return sid;
     }
-    function isLoaded(src) {
-        var scripts = document.getElementsByTagName("script"),
-            sid = tagIdOf(src)[0], i, len = scripts.length;
+    function isLoaded(asset, link) {
+        var elements = document.getElementsByTagName(link ? "link" : "script"),
+            sid = tagIdOf(asset)[0], i, len = elements.length;
         for (i = 0; i < len; ) {
-            if (tagIdOf(scripts[i++])[0] === sid) {
+            if (tagIdOf(elements[i++], link)[0] === sid) {
                 return true;
             }
         }
@@ -107,14 +107,24 @@
                 parent.removeChild(element);
             }
         };
+        parent.appendChild(element);
+    }
+    function getHead() {
+        return document.getElementsByTagName("head")[0] || document.documentElement;
     }
     function loadLib(src, completeCallback) {
-        var head = document.getElementsByTagName("head")[0] || document.documentElement,
-            script = document.createElement("script"), sid = tagIdOf(src);
+        var head = getHead(), sid = tagIdOf(src),
+            script = document.createElement("script");
         script.setAttribute(assetIdData, sid[0]);
         script.src = sid[1];
         bindLoadBehaviourTo(script, head, completeCallback);
-        head.appendChild(script);
+    }
+    function loadStyle(href, completeCallback) {
+        var head = getHead(), sid = tagIdOf(href, true),
+            link = document.createElement("link");
+        link.setAttribute("rel", "stylesheet");
+        link.setAttribute("href", sid[1]);
+        bindLoadBehaviourTo(link, head, completeCallback);
     }
     function loadComponent_jQuery(context, url, completeCallback) {
         window.jQuery.ajax({
