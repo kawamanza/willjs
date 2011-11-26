@@ -10,7 +10,7 @@
 (function (window, undefined) {
     "use strict";
     var will = {}, basicApi = {},
-        scriptIdData = "data-willjs-id",
+        assetIdData = "data-willjs-id",
         slice = Array.prototype.slice,
         toString = Object.prototype.toString,
         loadComponentLoaded = false,
@@ -56,32 +56,32 @@
             fill(this, key + k, hash[k]);
         }
     }
-    function libIdOf(src) {
+    function tagIdOf(asset, link) {
         var sid = undefined, seg;
-        if (isString(src)) {
-            if ( /^([\w\-\.]+)\@(.+)$/.test(src) ) {
+        if (isString(asset)) {
+            if ( /^([\w\-\.]+)\@(.+)$/.test(asset) ) {
                 sid = [RegExp.$1, RegExp.$2];
             } else {
-                seg = src.split(/[\?#]/)[0].split(/\//);
+                seg = asset.split(/[\?#]/)[0].split(/\//);
                 seg = seg[seg.length -1];
                 sid = [
-                    /^([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.js$/.test(seg)
+                    /^([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.(?:css|js)$/.test(seg)
                         ? RegExp.$1
                         : seg,
-                    src
+                    asset
                 ];
             }
         } else {
-            sid = [src.getAttribute(scriptIdData), src.src];
-            if (! sid[0]) sid = libIdOf(sid[1]);
+            sid = [asset.getAttribute(assetIdData), link ? asset.href : asset.src];
+            if (! sid[0]) sid = tagIdOf(sid[1]);
         }
         return sid;
     }
     function isLoaded(src) {
         var scripts = document.getElementsByTagName("script"),
-            sid = libIdOf(src)[0], i, len = scripts.length;
+            sid = tagIdOf(src)[0], i, len = scripts.length;
         for (i = 0; i < len; ) {
-            if (libIdOf(scripts[i++])[0] === sid) {
+            if (tagIdOf(scripts[i++])[0] === sid) {
                 return true;
             }
         }
@@ -89,8 +89,8 @@
     }
     function loadLib(src, completeCallback) {
         var head = document.getElementsByTagName("head")[0] || document.documentElement,
-            script = document.createElement("script"), done = false, sid = libIdOf(src);
-        script.setAttribute(scriptIdData, sid[0]);
+            script = document.createElement("script"), done = false, sid = tagIdOf(src);
+        script.setAttribute(assetIdData, sid[0]);
         script.src = sid[1];
         script.onload = script.onreadystatechange = function () {
             var rs = this.readyState;
