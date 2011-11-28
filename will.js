@@ -9,7 +9,7 @@
  */
 (function (window, undefined) {
     "use strict";
-    var will = {}, basicApi = {},
+    var will = {}, basicApi = {}, templateApi = {},
         assetIdData = "data-willjs-id",
         slice = Array.prototype.slice,
         toString = Object.prototype.toString,
@@ -146,6 +146,11 @@
             "addDomain": function (domainName, urlPrefix, asJS) {
                 this.domains[domainName] = [(asJS ? "js" : "json"), urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/")];
             },
+            "render": function (templateBody, data) {
+                var txt = templateBody;
+                for (k in data) {txt = txt.replace(new RegExp("{{"+k+"}}", "g"), data[k]);}
+            },
+            "renderTemplateWith": function (renderer) {this.render = renderer},
             "packages": {},
             "defaultPackage": "root",
             "registerPackage": function (packageName, functions) {
@@ -156,6 +161,20 @@
                 }
             }
         };
+    }
+    function newTemplateEntry(context, path) {
+        var obj = {
+            path: path,
+            location: urlFor(context, path)
+        };
+        extend.call(obj, templateApi);
+        for (k in obj) {
+            if (isFunction(obj[k])) {
+                wrapRender(context, obj, k)
+            }
+        }
+        obj.context = function () {return context;};
+        return obj;
     }
     function newProcessor(func) {
         return {
@@ -264,11 +283,73 @@
                 entry.impl.apply(undefined, args);
             }
         });
+        processors.loadTemplateAndCall = newProcessor(function (context, template, method, args) {
+            var url = template.location, line, tokens, i, len, content = template.content;
+            if (content) {
+                template[method].apply(undefined, args);
+                return;
+            }
+            will.u[loadComponentMethodName](context, url, function (statusCode, data) {
+                try {
+                    if (statusCode !== 200) {
+                        throw "could not load template: " + template.path;
+                    }
+                    content = {deps:{style:[],trigger:[]}};
+                    tokens = data.split(/\r?\n/);
+                    len = tokens.length;
+                    while (tokens.length) {
+                        line = tokens[0];
+                        if (!line) {
+                            tokens.shift();
+                            break;
+                        }
+                        if (/^([^\s]+)\s+(.*)$/.test(line) && (RegExp.$1 in content.deps)) {
+                            content.deps[RegExp.$1].push(RegExp.$2);
+                            tokens.shift();
+                        } else {
+                            break;
+                        }
+                    }
+                    content.body = tokens.join("\n");
+                    template.content = content;
+                    template[method].apply(undefined, args);
+                } finally {
+                    self.sched();
+                }
+            });
+            return false;
+        });
+        processors.loadStylesAndCall = newProcessor(function (context, template, method, args) {
+            var content = template.content, styles, style;
+            styles = content && content.deps.style || [];
+            if (styles.length) {
+                style = styles[0];
+                if (isLoaded(style, true)) {
+                    styles.shift();
+                    template[method].apply(undefined, args);
+                } else {
+                    loadStyle(style, function (status) {
+                        try {
+                            if (status === "success") {
+                                styles.shift();
+                                template[method].apply(undefined, args);
+                            }
+                        } finally {
+                            self.sched();
+                        }
+                    });
+                    return false;
+                }
+            } else {
+                template[method].apply(undefined, args);
+            }
+        });
     }
     function setup(context, reset, initConfig) {
         if (reset || ! ("cfg" in context)) {
             extend.call(context, "cfg", defaultConfig());
             context.registry = {};
+            context.templates = {};
             addDefaultProcessors(context.cfg.processors);
             if (! ("call" in context)) extend.call(context, basicApi);
         }
@@ -280,24 +361,34 @@
             n = path.name;
         return p[n] || (p[n] = {rescue: function () {/*delete p[n];*/}});
     }
-    function renderWrapper(context, template, method, f) {
-        var func = function () {return f.apply(template, arguments);};
-        return function () {
+    function templateObj(context, repository, path) {
+        var pn = path.packageName,
+            p = repository[pn] || (repository[pn] = {}),
+            n = path.name;
+        return p[n] || (p[n] = newTemplateEntry(context, path));
+    }
+    function wrapRender(context, template, method) {
+        var f = template[method], func = function () {return f.apply(template, arguments);};
+        template[method] = function () {
             var args = arguments;
             if (!template.content) {
                 process(context, "loadTemplateAndCall", [context, template, method, args]);
             } else if (template.content.deps.style.length) {
                 process(context, "loadStylesAndCall", [context, template, method, args]);
-            } else if (template.content.deps.trigger.length) {
-                requireLibs(context, template.content.deps.trigger)(function (status) {
-                    if (status == "success") {
-                        template[method] = func;
-                        f.apply(template, args);
-                    }
-                });
             } else {
                 template[method] = func;
                 f.apply(template, args);
+            }
+        };
+    }
+    function insertContentWrapper(func) {
+        return function (element, data) {
+            var self = this, context = self.context(), content = self.content, i,
+                trigger = content.deps.trigger, len = trigger.length;
+            content = $(context.cfg.render(content.body, data));
+            func(element, content);
+            for (i = 0; i < len; ) {
+                context.call(trigger[i])(content, data);
             }
         };
     }
@@ -432,6 +523,14 @@
         }
     });
     extend.call(will, basicApi);
+    extend.call(templateApi, {
+        "append": insertContentWrapper(function (element, content) {
+            element.append(content);
+        }),
+        "insertBefore": insertContentWrapper(function (element, content) {
+            content.insertBefore(element);
+        })
+    });
 
     basicApi.u[loadComponentMethodName] = function (context, url, completeCallback) {
         if (loadComponentLoaded) {
