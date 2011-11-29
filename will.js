@@ -11,6 +11,7 @@
     "use strict";
     var will = {}, basicApi = {},
         elementIdData = "data-willjs-id",
+        SID_PATTERN = /^([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.(?:css|js)$/,
         slice = Array.prototype.slice,
         toString = Object.prototype.toString,
         loadComponentLoaded = false,
@@ -60,16 +61,20 @@
         }
         return this;
     }
+    function uncachedAsset(asset) {
+        return asset.split(/[\?#]/)[0];
+    }
     function tagIdOf(asset) {
         var sid = undefined, seg;
         if (isString(asset)) {
+            asset = uncachedAsset(asset);
             if ( /^([\w\-\.]+)\@(.+)$/.test(asset) ) {
                 sid = [RegExp.$1, RegExp.$2];
             } else {
-                seg = asset.split(/[\?#]/)[0].split(/\//);
+                seg = asset.split(/\//);
                 seg = seg[seg.length -1];
                 sid = [
-                    /^([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.(?:css|js)$/.test(seg)
+                    SID_PATTERN.test(seg)
                         ? RegExp.$1
                         : seg,
                     asset
@@ -77,7 +82,7 @@
             }
         } else {
             seg = asset.getAttribute("src") || asset.getAttribute("href");
-            sid = [asset.getAttribute(elementIdData), seg];
+            sid = [asset.getAttribute(elementIdData), uncachedAsset(seg || "")];
             if (! sid[0] && sid[1]) sid = tagIdOf(sid[1]);
         }
         if (sid.length == 2) {
