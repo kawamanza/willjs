@@ -254,14 +254,19 @@
         return p[n] || (p[n] = {rescue: function () {/*delete p[n];*/}});
     }
     function implWrapper(context, entry, f) {
-        var func = function () {return f.apply(context, arguments);};
-        return function () {
-            var args = arguments;
-            if (entry.libs.length) {
+        var func = function () {return f.apply(context, arguments);},
+            impl = "impl", name = impl;
+        if (isString(f)) {
+            name = f;
+            f = entry[name];
+        }
+        entry[name] = function () {
+            var args = arguments, libs = entry.libs;
+            if (libs && libs.length) {
                 process(context, "loadDependenciesAndCall", [context, entry, args]);
             } else {
-                entry.impl = func;
-                return f.apply(context, args);
+                entry[name] = (name == impl ? func : f);
+                return entry[name].apply(entry, args);
             }
         };
     }
@@ -273,7 +278,7 @@
         if (isFunction(f)) {
             entry = entryOf(registry, path);
             entry.libs = isntObject(l) || !isArray(l) ? [] : l;
-            entry.impl = implWrapper(context, entry, f);
+            implWrapper(context, entry, f);
             entry.rescue = funcs.rescue || entry.rescue;
         } else {
             for(f in funcs) {
@@ -346,7 +351,7 @@
             } else {
                 func = rescue = function () {};
             }
-            entry.impl = implWrapper(context, entry, func);
+            implWrapper(context, entry, func);
             entry.rescue = rescue;
             entry.impl();
         };
@@ -409,6 +414,7 @@
     basicApi.api.extend({
         "pathFor": pathFor,
         "urlFor": urlFor,
+        "implWrapper": implWrapper,
         "getConfig": function () {
             return extend.call(new this.Defaults(), {
                 "processors": {},
