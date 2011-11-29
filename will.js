@@ -60,24 +60,25 @@
         }
         return this;
     }
-    function tagIdOf(src) {
+    function tagIdOf(asset) {
         var sid = undefined, seg;
-        if (isString(src)) {
-            if ( /^([\w\-\.]+)\@(.+)$/.test(src) ) {
+        if (isString(asset)) {
+            if ( /^([\w\-\.]+)\@(.+)$/.test(asset) ) {
                 sid = [RegExp.$1, RegExp.$2];
             } else {
-                seg = src.split(/[\?#]/)[0].split(/\//);
+                seg = asset.split(/[\?#]/)[0].split(/\//);
                 seg = seg[seg.length -1];
                 sid = [
                     /^([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.(?:css|js)$/.test(seg)
                         ? RegExp.$1
                         : seg,
-                    src
+                    asset
                 ];
             }
         } else {
-            sid = [src.getAttribute(elementIdData), src.src];
-            if (! sid[0]) sid = tagIdOf(sid[1]);
+            seg = asset.getAttribute("src") || asset.getAttribute("href");
+            sid = [asset.getAttribute(elementIdData), seg];
+            if (! sid[0] && sid[1]) sid = tagIdOf(sid[1]);
         }
         if (sid.length == 2) {
             sid.push(isCss(sid[1]));
@@ -85,14 +86,14 @@
         }
         return sid;
     }
-    function isLoaded(src) {
-        var sid = tagIdOf(src), id = sid[0], href = sid[1], css = sid[2],
+    function isLoaded(asset) {
+        var sid = tagIdOf(asset), id = sid[0], href = sid[1], css = sid[2],
             elements = document.getElementsByTagName(sid[3]),
             i, len = elements.length, el;
         for (i = 0; i < len; ) {
             el = elements[i++];
             if (tagIdOf(el)[0] === id) {
-                if (/\@/.test(src) && css && el.getAttribute("href") != href) el.setAttribute("href", href);
+                if (/\@/.test(asset) && css && el.getAttribute("href") != href) el.setAttribute("href", href);
                 return true;
             }
         }
@@ -200,7 +201,7 @@
             }
             if (path.format == "js") {
                 url = path.toString().replace(/[:\.]/g, "_") + "@" + url;
-                requireLibs(context, [url])(function (status) {
+                requireAssets(context, [url])(function (status) {
                     try {
                         if (status == "success") {
                             impl = entry.impl;
@@ -230,18 +231,18 @@
         });
         processors.loadDependenciesAndCall = newProcessor(function (context, entry, args) {
             var self = this, debug = context.cfg.debug,
-                libs = entry.libs, lib;
-            if (libs.length) {
-                lib = libs[0];
-                if (isLoaded(lib)) {
-                    libs.shift();
+                assets = entry.assets || entry.libs, asset;
+            if (assets.length) {
+                asset = assets[0];
+                if (isLoaded(asset)) {
+                    assets.shift();
                     entry.impl.apply(undefined, args);
                 } else {
-                    if (debug) debug("** loading lib \"" + lib + "\"");
-                    loadDependency(lib, function (status) {
+                    if (debug) debug("** loading asset \"" + asset + "\"");
+                    loadDependency(asset, function (status) {
                         try {
                             if (status === "success") {
-                                libs.shift();
+                                assets.shift();
                                 entry.impl.apply(undefined, args);
                             } else {
                                 entry.rescue.apply(undefined, args);
@@ -280,8 +281,8 @@
             f = entry[name];
         }
         entry[name] = function () {
-            var args = arguments, libs = entry.libs;
-            if (libs && libs.length) {
+            var args = arguments, assets = entry.assets || entry.libs;
+            if (assets && assets.length) {
                 process(context, "loadDependenciesAndCall", [context, entry, args]);
             } else {
                 entry[name] = (name == impl ? func : f);
@@ -293,10 +294,10 @@
         if (isntObject(funcs)) return;
         var entry,
             f = funcs.impl || isFunction(funcs.getImpl) && funcs.getImpl(context),
-            l = funcs.libs;
+            l = funcs.assets || funcs.libs;
         if (isFunction(f)) {
             entry = entryOf(registry, path);
-            entry.libs = isntObject(l) || !isArray(l) ? [] : l;
+            entry.assets = isntObject(l) || !isArray(l) ? [] : l;
             implWrapper(context, entry, f);
             entry.rescue = funcs.rescue || entry.rescue;
         } else {
@@ -359,8 +360,8 @@
             process(context, "callComponent", [context, path, args]);
         };
     }
-    function requireLibs(context, libs) {
-        var entry = {libs: libs};
+    function requireAssets(context, assets) {
+        var entry = {assets: assets};
         return function (loadCallback) {
             if (entry.impl) return;
             var func, rescue;
@@ -382,7 +383,7 @@
             return stubsTo(this, selector);
         },
         "use": function () {
-            return requireLibs(this, slice.call(arguments, 0));
+            return requireAssets(this, slice.call(arguments, 0));
         },
         "addComponent": function (selector, json) {
             var context = this;
