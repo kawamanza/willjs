@@ -358,10 +358,7 @@
         return function () {
             var registry = context.registry,
                 args = arguments,
-                path = pathFor(context, funcPath),
-                entry = entryOf(registry, path),
-                impl = entry.impl;
-            if (impl) return impl.apply(undefined, args);
+                path = pathFor(context, funcPath);
             process(context, "callComponent", [context, path, args]);
         };
     }
@@ -387,8 +384,8 @@
         "call": function (selector) {
             return stubsTo(this, selector);
         },
-        "use": function () {
-            return requireAssets(this, slice.call(arguments, 0));
+        "use": function (assets) {
+            return requireAssets(this, isArray(assets) ? assets : slice.call(arguments, 0));
         },
         "addComponent": function (selector, json) {
             var context = this;
