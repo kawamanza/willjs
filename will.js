@@ -209,8 +209,8 @@
             }
             return false;
         });
-        processors.loadDependenciesAndCall = newProcessor(function (entry, args) {
-            var self = this,
+        processors.loadDependenciesAndCall = newProcessor(function (context, entry, args) {
+            var self = this, debug = context.cfg.debug,
                 libs = entry.libs, lib;
             if (libs.length) {
                 lib = libs[0];
@@ -218,6 +218,7 @@
                     libs.shift();
                     entry.impl.apply(undefined, args);
                 } else {
+                    if (debug) debug("** loading lib \"" + lib + "\"");
                     loadLib(lib, function (status) {
                         try {
                             if (status === "success") {
@@ -257,7 +258,7 @@
         return function () {
             var args = arguments;
             if (entry.libs.length) {
-                process(context, "loadDependenciesAndCall", [entry, args]);
+                process(context, "loadDependenciesAndCall", [context, entry, args]);
             } else {
                 entry.impl = func;
                 return f.apply(context, args);
