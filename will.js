@@ -250,8 +250,8 @@
     function entryOf(registry, path) {
         var pn = path.packageName,
             p = registry[pn] || (registry[pn] = {}),
-            f = path.func;
-        return p[f] || (p[f] = {rescue: function () {/*delete p[f];*/}});
+            n = path.name;
+        return p[n] || (p[n] = {rescue: function () {/*delete p[n];*/}});
     }
     function implWrapper(context, entry, f) {
         var func = function () {return f.apply(context, arguments);};
@@ -277,42 +277,43 @@
             entry.rescue = funcs.rescue || entry.rescue;
         } else {
             for(f in funcs) {
-                path.func = f;
+                path.name = f;
                 registerFunctions(context, registry, funcs[f], path);
             }
         }
     }
-    function pathFor(context, funcPath) {
+    function pathFor(context, strPath, format) {
         var cfg = context.cfg,
             d = cfg.domains,
             domainName = "local",
             packageName = cfg.defaultPackage,
-            func = funcPath.toString();
-        if ( /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/.test(func) ){
-            func = RegExp.$3;
-            packageName = RegExp.$2 || cfg.packages[func] || packageName;
+            name = strPath.toString();
+        if ( /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/.test(name) ){
+            name = RegExp.$3;
+            packageName = RegExp.$2 || cfg.packages[name] || packageName;
             domainName = RegExp.$1 || domainName;
         }
         if (!d[domainName]) domainName = "local"
         return {
-            format: d[domainName][0],
+            format: format || d[domainName][0],
             domain: d[domainName][1],
             packageName: packageName,
-            func: func,
+            name: name,
             toString: function() {
-                return domainName + ":" + packageName + "." + func;
+                return domainName + ":" + packageName + "." + name;
             }
         };
     }
-    function urlFor(context, path) {
+    function urlFor(context, path, mode) {
         var cfg = context.cfg,
-            pn = path.packageName, f = path.func;
+            pn = path.packageName, n = path.name;
+        if (mode == undefined) mode = cfg.mode;
         return path.domain
-            + (cfg.mode == will.modes.PROD
+            + (mode == will.modes.PROD
                 ? pn
                 : pn == cfg.defaultPackage
-                    ? f
-                    : pn + "/" + f)
+                    ? n
+                    : pn + "/" + n)
             + "." + path.format;
     }
     function process(context, handler, args) {
@@ -406,6 +407,8 @@
 
     // Settings
     basicApi.api.extend({
+        "pathFor": pathFor,
+        "urlFor": urlFor,
         "getConfig": function () {
             return extend.call(new this.Defaults(), {
                 "processors": {},
