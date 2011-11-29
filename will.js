@@ -10,7 +10,7 @@
 (function (window, undefined) {
     "use strict";
     var will = {}, basicApi = {},
-        scriptIdData = "data-willjs-id",
+        elementIdData = "data-willjs-id",
         slice = Array.prototype.slice,
         toString = Object.prototype.toString,
         loadComponentLoaded = false,
@@ -73,7 +73,7 @@
                 ];
             }
         } else {
-            sid = [src.getAttribute(scriptIdData), src.src];
+            sid = [src.getAttribute(elementIdData), src.src];
             if (! sid[0]) sid = libIdOf(sid[1]);
         }
         return sid;
@@ -88,30 +88,38 @@
         }
         return false;
     }
-    function loadLib(src, completeCallback) {
-        var head = document.getElementsByTagName("head")[0] || document.documentElement,
-            script = document.createElement("script"), done = false, sid = libIdOf(src);
-        script.setAttribute(scriptIdData, sid[0]);
-        script.src = sid[1];
-        script.onload = script.onreadystatechange = function () {
+    function bindLoadBehaviourTo(element, parent, completeCallback) {
+        var done = false;
+        element.onload = element.onreadystatechange = function () {
             var rs = this.readyState;
             if (!done && (!rs || rs === "loaded" || rs === "complete")) {
                done = true;
                completeCallback("success");
-               script.onload = script.onreadystatechange = undefined;
-               script.onerror = script.onabort = undefined;
+               element.onload = element.onreadystatechange = undefined;
+               element.onerror = element.onabort = undefined;
            }
         };
-        script.onerror = script.onabort = function () {
+        element.onerror = element.onabort = function () {
             done = true;
             completeCallback("error");
-            script.onload = script.onreadystatechange = undefined;
-            script.onerror = script.onabort = undefined;
-            if (head && script.parentNode) {
-                head.removeChild(script);
+            element.onload = element.onreadystatechange = undefined;
+            element.onerror = element.onabort = undefined;
+            if (parent && element.parentNode) {
+                parent.removeChild(element);
             }
         };
-        head.appendChild(script);
+        parent.appendChild(element);
+    }
+    function getHead() {
+        return document.getElementsByTagName("head")[0] || document.documentElement;
+    }
+    function loadLib(src, completeCallback) {
+        var head = getHead(),  css = /\.css$/.test(src), element, sid = libIdOf(src);
+        element = document.createElement(css ? "link" : "script");
+        element.setAttribute(elementIdData, sid[0]);
+        if (css) element.setAttribute("rel", "stylesheet");
+        element[css ? "href" : "src"] = sid[1];
+        bindLoadBehaviourTo(element, head, completeCallback);
     }
     function loadComponent_jQuery(context, url, completeCallback) {
         var cache = (context.cfg.mode === will.modes.PROD),
