@@ -114,12 +114,18 @@
         head.appendChild(script);
     }
     function loadComponent_jQuery(context, url, completeCallback) {
+        var cache = (context.cfg.mode === will.modes.PROD),
+            suffix = context.cfg.ajaxSuffix;
+        if (suffix) {
+            cache = true;
+            url = url + "?" + suffix;
+        }
         window.jQuery.ajax({
             dataType: "html",
             complete: function (xhr, status) {
                 completeCallback(xhr.status, xhr.responseText);
             },
-            cache: (context.cfg.mode === will.modes.PROD),
+            cache: cache,
             url: url
         });
     }
