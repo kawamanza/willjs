@@ -29,6 +29,9 @@
     function isFunction(value) {
         return typeof value === "function";
     }
+    function isCss(href) {
+        return /\.css$/.test(href);
+    }
     function fill(root, keys, value) {
         var key, v;
         if (isString(keys)) {
@@ -57,7 +60,7 @@
         }
         return this;
     }
-    function libIdOf(src) {
+    function tagIdOf(src) {
         var sid = undefined, seg;
         if (isString(src)) {
             if ( /^([\w\-\.]+)\@(.+)$/.test(src) ) {
@@ -66,7 +69,7 @@
                 seg = src.split(/[\?#]/)[0].split(/\//);
                 seg = seg[seg.length -1];
                 sid = [
-                    /^([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.js$/.test(seg)
+                    /^([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.(?:css|js)$/.test(seg)
                         ? RegExp.$1
                         : seg,
                     src
@@ -74,15 +77,22 @@
             }
         } else {
             sid = [src.getAttribute(elementIdData), src.src];
-            if (! sid[0]) sid = libIdOf(sid[1]);
+            if (! sid[0]) sid = tagIdOf(sid[1]);
+        }
+        if (sid.length == 2) {
+            sid.push(isCss(sid[1]));
+            sid.push(sid[2] ? "link" : "script");
         }
         return sid;
     }
     function isLoaded(src) {
-        var scripts = document.getElementsByTagName("script"),
-            sid = libIdOf(src)[0], i, len = scripts.length;
+        var sid = tagIdOf(src), id = sid[0], href = sid[1], css = sid[2],
+            elements = document.getElementsByTagName(sid[3]),
+            i, len = elements.length, el;
         for (i = 0; i < len; ) {
-            if (libIdOf(scripts[i++])[0] === sid) {
+            el = elements[i++];
+            if (tagIdOf(el)[0] === id) {
+                if (/\@/.test(src) && css && el.getAttribute("href") != href) el.setAttribute("href", href);
                 return true;
             }
         }
@@ -108,18 +118,19 @@
                 parent.removeChild(element);
             }
         };
-        parent.appendChild(element);
     }
     function getHead() {
         return document.getElementsByTagName("head")[0] || document.documentElement;
     }
-    function loadLib(src, completeCallback) {
-        var head = getHead(),  css = /\.css$/.test(src), element, sid = libIdOf(src);
-        element = document.createElement(css ? "link" : "script");
+    function loadDependency(src, completeCallback) {
+        var head = getHead(), sid = tagIdOf(src),  css = sid[2], element;
+        element = document.createElement(sid[3]);
         element.setAttribute(elementIdData, sid[0]);
         if (css) element.setAttribute("rel", "stylesheet");
         element[css ? "href" : "src"] = sid[1];
-        bindLoadBehaviourTo(element, head, completeCallback);
+        if (!css) bindLoadBehaviourTo(element, head, completeCallback);
+        head.appendChild(element);
+        if (css) completeCallback("success");
     }
     function loadComponent_jQuery(context, url, completeCallback) {
         var cache = (context.cfg.mode === will.modes.PROD),
@@ -227,7 +238,7 @@
                     entry.impl.apply(undefined, args);
                 } else {
                     if (debug) debug("** loading lib \"" + lib + "\"");
-                    loadLib(lib, function (status) {
+                    loadDependency(lib, function (status) {
                         try {
                             if (status === "success") {
                                 libs.shift();
