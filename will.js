@@ -265,7 +265,7 @@
     }
     function setup(context, reset, initConfig) {
         if (reset || ! ("cfg" in context)) {
-            extend.call(context, "cfg", context.api.getConfig());
+            extend.call(context, "cfg", context.u.getConfig());
             context.registry = {};
             addDefaultProcessors(context.cfg.processors);
             if (! ("call" in context)) extend.call(context, basicApi);
@@ -399,7 +399,6 @@
             process(this, processorName, slice.call(arguments, 1));
         },
         "modes": {DEV:0, PROD:1},
-        "api.extend": extend,
         "u.extend": extend
     });
     extend.call(will, {
@@ -433,7 +432,7 @@
     };
 
     // Settings
-    basicApi.api.extend({
+    basicApi.u.extend({
         "pathFor": pathFor,
         "urlFor": urlFor,
         "implWrapper": implWrapper,
@@ -448,7 +447,7 @@
         },
         "Defaults": function () {}
     });
-    extend.call(basicApi.api.Defaults.prototype, {
+    extend.call(basicApi.u.Defaults.prototype, {
         "mode": will.modes.DEV,
         "addDomain": function (domainName, urlPrefix, asJS) {
             this.domains[domainName] = [(asJS ? "js" : "json"), urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/")];
