@@ -55,6 +55,7 @@
         for (k in hash) {
             fill(this, key + k, hash[k]);
         }
+        return this;
     }
     function libIdOf(src) {
         var sid = undefined, seg;
@@ -121,27 +122,6 @@
             cache: (context.cfg.mode === will.modes.PROD),
             url: url
         });
-    }
-    function defaultConfig() {
-        return {
-            "mode": will.modes.DEV,
-            "processors": {},
-            "domains": {
-                "local": ["json", "/javascripts/will/"]
-            },
-            "addDomain": function (domainName, urlPrefix, asJS) {
-                this.domains[domainName] = [(asJS ? "js" : "json"), urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/")];
-            },
-            "packages": {},
-            "defaultPackage": "root",
-            "registerPackage": function (packageName, functions) {
-                var funcs = functions.split(/,/), p, len, i;
-                p = this.packages;
-                for (i = 0, len = funcs.length; i < len; ) {
-                    p[funcs[i++]] = packageName;
-                }
-            }
-        };
     }
     function newProcessor(func) {
         return {
@@ -253,7 +233,7 @@
     }
     function setup(context, reset, initConfig) {
         if (reset || ! ("cfg" in context)) {
-            extend.call(context, "cfg", defaultConfig());
+            extend.call(context, "cfg", context.api.getConfig());
             context.registry = {};
             addDefaultProcessors(context.cfg.processors);
             if (! ("call" in context)) extend.call(context, basicApi);
@@ -384,6 +364,7 @@
             process(this, processorName, slice.call(arguments, 1));
         },
         "modes": {DEV:0, PROD:1},
+        "api.extend": extend,
         "u.extend": extend
     });
     extend.call(will, {
@@ -415,6 +396,34 @@
             }
         });
     };
+
+    // Settings
+    basicApi.api.extend({
+        "getConfig": function () {
+            return extend.call(new this.Defaults(), {
+                "processors": {},
+                "domains": {
+                    "local": ["json", "/javascripts/will/"]
+                },
+                "packages": {}
+            });
+        },
+        "Defaults": function () {}
+    });
+    extend.call(basicApi.api.Defaults.prototype, {
+        "mode": will.modes.DEV,
+        "addDomain": function (domainName, urlPrefix, asJS) {
+            this.domains[domainName] = [(asJS ? "js" : "json"), urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/")];
+        },
+        "defaultPackage": "root",
+        "registerPackage": function (packageName, functions) {
+            var funcs = functions.split(/,/), p, len, i;
+            p = this.packages;
+            for (i = 0, len = funcs.length; i < len; ) {
+                p[funcs[i++]] = packageName;
+            }
+        }
+    });
 
     // Initial setup
     setup(will, false);
