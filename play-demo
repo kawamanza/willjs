@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'sinatra'
+
+set :public_folder, File.expand_path('..', __FILE__)
+
+get "/" do
+  redirect to("/index.html")
+end

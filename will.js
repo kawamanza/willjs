@@ -5,7 +5,7 @@
  * Copyright 2011, Marcelo Manzan
  * Dual licensed under the MIT or GPL Version 2 licenses.
  *
- * Date: Tue Nov 29 16:04:48 2011 -0200
+ * Date: Wed Nov 30 00:00:00 2011 -0200
  */
 (function (window, undefined) {
     "use strict";
@@ -265,9 +265,7 @@
     }
     function setup(context, reset, initConfig) {
         if (reset || ! ("cfg" in context)) {
-            extend.call(context, "cfg", context.u.getConfig());
-            context.registry = {};
-            addDefaultProcessors(context.cfg.processors);
+            extend.call(context, context.u.getConfig());
             if (! ("call" in context)) extend.call(context, basicApi);
         }
         if (isFunction(initConfig)) initConfig(context.cfg);
@@ -436,19 +434,25 @@
         "pathFor": pathFor,
         "urlFor": urlFor,
         "implWrapper": implWrapper,
+        "newProcessor": newProcessor,
         "getConfig": function () {
-            return extend.call(new this.Defaults(), {
-                "processors": {},
+            var self = this, cfg;
+            cfg = extend.call(new self.Defaults(), {
+                "processors": new self.Processors(),
                 "domains": {
                     "local": ["json", "/javascripts/will/"]
                 },
                 "packages": {}
             });
+            return {cfg: cfg, registry: {}};
         },
+        "Processors": function () {},
         "Defaults": function () {}
     });
+    addDefaultProcessors(basicApi.u.Processors.prototype);
     extend.call(basicApi.u.Defaults.prototype, {
         "mode": will.modes.DEV,
+        "version": "1.0",
         "addDomain": function (domainName, urlPrefix, asJS) {
             this.domains[domainName] = [(asJS ? "js" : "json"), urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/")];
         },

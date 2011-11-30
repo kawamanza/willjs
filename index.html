@@ -1,0 +1,13 @@
+<html>
+<head>
+<script src="will.js"></script>
+<script>
+will.configure(function (config) {
+    config.debug = function (text) {console.log(text);};
+});
+</script>
+</head>
+<body>
+<a href="javascript:will.call('doSomething')();">click here</a>
+</body>
+</html>
