@@ -137,7 +137,7 @@
     function getHead() {
         return document.getElementsByTagName("head")[0] || document.documentElement;
     }
-    function loadDependency(src, completeCallback) {
+    function loadDependency(src, lastCss, completeCallback) {
         var head = getHead(), sid = tagIdOf(src),  css = sid[2], element;
         element = document.createElement(sid[3]);
         element.setAttribute(elementIdData, sid[0]);
@@ -145,11 +145,11 @@
         element[css ? "href" : "src"] = sid[1];
         if (!css) bindLoadBehaviourTo(element, head, completeCallback);
         if (sid[4] && head.firstChild) {
-            head.insertBefore(element, head.firstChild);
+            head.insertBefore(element, lastCss || head.firstChild);
         } else {
             head.appendChild(element);
         }
-        if (css) completeCallback("success");
+        if (css) completeCallback("success", element);
     }
     function loadComponent_jQuery(context, url, completeCallback) {
         var cache = (context.cfg.mode === will.modes.PROD),
@@ -257,10 +257,11 @@
                     entry.impl.apply(undefined, args);
                 } else {
                     if (debug) debug("** loading asset \"" + asset + "\"");
-                    loadDependency(asset, function (status) {
+                    loadDependency(asset, entry.lastCss, function (status, css) {
                         try {
                             if (status === "success") {
                                 assets.shift();
+                                if (css) entry.lastCss = css;
                                 entry.impl.apply(undefined, args);
                             } else {
                                 entry.rescue.apply(undefined, args);
