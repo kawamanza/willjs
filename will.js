@@ -79,6 +79,13 @@
                         : seg,
                     asset
                 ];
+                if (isCss(sid[1])) {
+                    seg = sid[1].split(/\/+/);
+                    if (/^\^?(\w+:|)$/.test(seg[0])) seg.shift();
+                    seg.pop();
+                    seg.push(sid[0]);
+                    sid[0] = seg.join("_").replace(/:/, "-");
+                }
             }
         } else {
             seg = asset.getAttribute("src") || asset.getAttribute("href");
@@ -88,6 +95,8 @@
         if (sid.length == 2) {
             sid.push(isCss(sid[1]));
             sid.push(sid[2] ? "link" : "script");
+            sid.push(/^\^/.test(sid[1]));
+            if (sid[4]) sid[1] = sid[1].substr(1);
         }
         return sid;
     }
@@ -135,7 +144,11 @@
         if (css) element.setAttribute("rel", "stylesheet");
         element[css ? "href" : "src"] = sid[1];
         if (!css) bindLoadBehaviourTo(element, head, completeCallback);
-        head.appendChild(element);
+        if (sid[4] && head.firstChild) {
+            head.insertBefore(element, head.firstChild);
+        } else {
+            head.appendChild(element);
+        }
         if (css) completeCallback("success");
     }
     function loadComponent_jQuery(context, url, completeCallback) {
