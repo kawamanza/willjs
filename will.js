@@ -21,7 +21,7 @@
         this.name = name;
         if (prepare) setup(this, false);
     }
-    window.will = will = new WillJS(globalName);
+    window[globalName] = will = new WillJS(globalName);
     function isString(value) {
         return typeof value === "string";
     }
