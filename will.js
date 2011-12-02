@@ -1,15 +1,15 @@
 /*!
- * Will.js JavaScript Library v1.0
+ * WillJS JavaScript Library v1.0
  * http://github.com/kawamanza/will.js
  *
  * Copyright 2011, Marcelo Manzan
  * Dual licensed under the MIT or GPL Version 2 licenses.
  *
- * Date: Wed Nov 30 00:00:00 2011 -0200
+ * Date: Fry Dec 02 00:50:46 2011 -0200
  */
 (function (window, undefined) {
     "use strict";
-    var will = {}, basicApi = {},
+    var will, basicApi = {},
         elementIdData = "data-willjs-id",
         SID_PATTERN = /^([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.(?:css|js)$/,
         slice = Array.prototype.slice,
@@ -17,7 +17,11 @@
         loadComponentLoaded = false,
         loadComponentMethodName = "loadComponent",
         document = window.document;
-    window.will = will;
+    function WillJS(name, prepare) {
+        this.name = name;
+        if (prepare) setup(this, false);
+    }
+    window.will = will = new WillJS("will");
     function isString(value) {
         return typeof value === "string";
     }
@@ -279,7 +283,7 @@
     }
     function setup(context, reset, initConfig) {
         if (reset || ! ("cfg" in context)) {
-            extend.call(context, context.u.getConfig());
+            extend.call(context, will.u.getConfig());
             if (! ("call" in context)) extend.call(context, basicApi);
         }
         if (isFunction(initConfig)) initConfig(context.cfg);
@@ -411,9 +415,11 @@
             process(this, processorName, slice.call(arguments, 1));
         },
         "modes": {DEV:0, PROD:1},
-        "u.extend": extend
-    });
-    extend.call(will, {
+        "u.extend": extend,
+        "as": function (name) {
+            if (!name) return name;
+            return window[name] || (window[name] = new WillJS(name, true));
+        },
         "configure": function (initConfig) {
             setup(this, false, initConfig);
             return this;
@@ -423,7 +429,7 @@
             return this;
         }
     });
-    extend.call(will, basicApi);
+    extend.call(WillJS.prototype, basicApi);
 
     basicApi.u[loadComponentMethodName] = function (context, url, completeCallback) {
         if (loadComponentLoaded) {
