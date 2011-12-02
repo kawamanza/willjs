@@ -7,7 +7,7 @@
  *
  * Date: Fry Dec 02 00:50:46 2011 -0200
  */
-(function (window, undefined) {
+(function (window, globalName, undefined) {
     "use strict";
     var will, basicApi = {},
         elementIdData = "data-willjs-id",
@@ -21,7 +21,7 @@
         this.name = name;
         if (prepare) setup(this, false);
     }
-    window.will = will = new WillJS("will");
+    window.will = will = new WillJS(globalName);
     function isString(value) {
         return typeof value === "string";
     }
@@ -489,4 +489,4 @@
 
     // Initial setup
     setup(will, false);
-})(window, null);
+})(window, "will", null);
