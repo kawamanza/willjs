@@ -11,6 +11,7 @@
 
     will.configure(function (config) {
         config.mode = will.modes.DEV;                      // default mode
+        config.queryString = "_=useThisForCaching";
 
         config.addDomain(
             "local",                                       // default domain
@@ -131,8 +132,7 @@ When grouping components inside a package, the JSON components file must be like
 
 ## Customized Will.js
 
-    window.myWill = {};
-    will.configure.call(window.myWill, function (config) {
+    will.as("myWill").configure(function (config) {
         config.mode = will.modes.DEV;                      // default mode
         config.addDomain(
             "local",                                       // default domain

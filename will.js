@@ -143,7 +143,7 @@
     }
     function loadDependency(context, src, lastCss, completeCallback) {
         var head = getHead(), sid = tagIdOf(src), css = sid[2], element,
-            suffix = context.cfg.ajaxSuffix;
+            suffix = context.cfg.queryString;
         element = document.createElement(sid[3]);
         element.setAttribute(elementIdData, sid[0]);
         if (css) element.setAttribute("rel", "stylesheet");
@@ -158,7 +158,7 @@
     }
     function loadComponent_jQuery(context, url, completeCallback) {
         var cache = (context.cfg.mode === will.modes.PROD),
-            suffix = context.cfg.ajaxSuffix;
+            suffix = context.cfg.queryString;
         if (suffix) {
             cache = true;
             url = url + "?" + suffix;
