@@ -1,0 +1,2 @@
+Support for fixed URL queryString to load components, libs and CSS
+  config.queryString = "_=useThisForAllRequests"
