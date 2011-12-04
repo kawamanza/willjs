@@ -1,0 +1,2 @@
+Support for loading CSS dependencies
+  you can define preceding sibling with '^' symbol on URLs
