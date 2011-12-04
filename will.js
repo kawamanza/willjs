@@ -1,11 +1,11 @@
 /*!
- * WillJS JavaScript Library v1.0
+ * WillJS JavaScript Library v1.1
  * http://github.com/kawamanza/will.js
  *
  * Copyright 2011, Marcelo Manzan
  * Dual licensed under the MIT or GPL Version 2 licenses.
  *
- * Date: Fry Dec 02 00:50:46 2011 -0200
+ * Date: Sun Dec 04 03:27:11 2011 -0200
  */
 (function (window, globalName, undefined) {
     "use strict";
@@ -158,14 +158,25 @@
     }
     function loadComponent_jQuery(context, url, completeCallback) {
         var cache = (context.cfg.mode === will.modes.PROD),
-            suffix = context.cfg.queryString;
+            suffix = context.cfg.queryString,
+            jsonp, done = false, location = window.location, debug = context.cfg.debug;
+        jsonp = (/^(\w+:)?\/\/([^\/]+)/.test(url) && (RegExp.$2 != location.host || RegExp.$1 && RegExp.$1 != location.protocol));
         if (suffix) {
             cache = true;
             url = url + "?" + suffix;
         }
         window.jQuery.ajax({
-            dataType: "html",
+            dataType: jsonp ? "jsonp" : "html",
+            success: function (data) {
+                if (done) return;
+                done = true;
+                if (debug) debug(" * successful loaded " + url);
+                completeCallback(200, data);
+            },
             complete: function (xhr, status) {
+                if (done) return;
+                done = true;
+                if (debug) debug(" * completed " + url);
                 completeCallback(xhr.status, xhr.responseText);
             },
             cache: cache,
@@ -240,7 +251,7 @@
                         if (statusCode !== 200) {
                             throw "could not load component: " + path;
                         }
-                        data = eval("("+data+")");
+                        if (isString(data)) data = eval("("+data+")");
                         if (isntObject(data)) return;
                         registerFunctions(context, registry, data, path);
                         impl = entry.impl;
@@ -473,7 +484,7 @@
     addDefaultProcessors(basicApi.u.Processors.prototype);
     extend.call(basicApi.u.Defaults.prototype, {
         "mode": will.modes.DEV,
-        "version": "1.0",
+        "version": "1.1",
         "addDomain": function (domainName, urlPrefix, asJS) {
             this.domains[domainName] = [(asJS ? "js" : "json"), urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/")];
         },
