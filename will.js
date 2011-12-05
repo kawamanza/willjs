@@ -302,7 +302,9 @@
     }
     function entryOf(registry, path) {
         var pn = path.packageName,
-            p = registry[pn] || (registry[pn] = {}),
+            dn = path.domainName,
+            r = registry[dn] || (registry[dn] = {}),
+            p = r[pn] || (r[pn] = {}),
             n = path.name;
         return p[n] || (p[n] = {rescue: function () {/*delete p[n];*/}});
     }
@@ -355,6 +357,7 @@
         return {
             format: format || d[domainName][0],
             domain: d[domainName][1],
+            domainName: domainName,
             packageName: packageName,
             name: name,
             toString: function() {
