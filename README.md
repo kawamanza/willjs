@@ -5,7 +5,7 @@
 ## Public API
 
     will.call("componentName")(param1, param2);            // invokes a component
-    will.use("/jquery.js", "/jquery-ui.js")();             // loads required libs if not present yet.
+    will.use("/jquery.js", "/jquery-ui.js")();             // loads required assets if not present yet.
 
 ## Configuration
 
@@ -40,8 +40,8 @@ The components are automatically loaded by AJAX and stored on Will's registry.
                 // do something the user requests to
             };
         },
-        rescue: function () {/* fallback */},              // error loading libs
-        libs: [                                            // required libs (optional)
+        rescue: function () {/* fallback */},              // error loading assets
+        assets: [                                          // required assets (optional)
             "/javascripts/lib1.js",
             "/javascripts/lib2.js"
         ]
@@ -60,8 +60,8 @@ If you prefere to load components as script, you need to perform the instruction
                 // do something the user requests to
             };
         },
-        rescue: function () {/* fallback */},              // error loading libs
-        libs: [                                            // required libs (optional)
+        rescue: function () {/* fallback */},              // error loading assets
+        assets: [                                          // required assets (optional)
             "/javascripts/lib1.js",
             "/javascripts/lib2.js"
         ]
@@ -100,8 +100,8 @@ When grouping components inside a package, the JSON components file must be like
                     // do something the user requests to
                 };
             },
-            rescue: function () {/* fallback */},              // error loading libs
-            libs: [                                            // required libs (optional)
+            rescue: function () {/* fallback */},              // error loading assets
+            assets: [                                          // required assets (optional)
                 "/javascripts/lib1.js",
                 "/javascripts/lib2.js"
             ]
@@ -141,6 +141,6 @@ When grouping components inside a package, the JSON components file must be like
     });
     // Public API
     myWill.call("componentName")(param1, param2);         // invokes a component
-    myWill.use("/jquery.js", "/jquery-ui.js")();          // loads required libs if not present yet.
+    myWill.use("/jquery.js", "/jquery-ui.js")();          // loads required assets if not present yet.
 
 Enjoy in moderation!
