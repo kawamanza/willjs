@@ -16,12 +16,13 @@
         config.addDomain(
             "local",                                       // default domain
             "/javascripts/will/",                          // default component domain (repository)
-            false);                                        // load by ajax (default)
+            false);                                        // load by ajax (json/jsonp, default)
 
         config.addDomain(
             "remote",                                      // another domain sample
             "/javascripts/will-scripts/",                  // components repository
-            true);                                         // load as script
+            true,                                          // load as script (js)
+            will.modes.PROD);                              // mode (optional, null: use default)
 
         config.defaultPackage = "root";                    // default package
     });

@@ -357,6 +357,7 @@
         return {
             format: format || d[domainName][0],
             domain: d[domainName][1],
+            mode: d[domainName][2],
             domainName: domainName,
             packageName: packageName,
             name: name,
@@ -368,6 +369,7 @@
     function urlFor(context, path, mode) {
         var cfg = context.cfg,
             pn = path.packageName, n = path.name;
+        if (mode == undefined) mode = path.mode;
         if (mode == undefined) mode = cfg.mode;
         return path.domain
             + (mode == will.modes.PROD
@@ -488,8 +490,9 @@
     extend.call(basicApi.u.Defaults.prototype, {
         "mode": will.modes.DEV,
         "version": "1.1",
-        "addDomain": function (domainName, urlPrefix, asJS) {
+        "addDomain": function (domainName, urlPrefix, asJS, mode) {
             this.domains[domainName] = [(asJS ? "js" : "json"), urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/")];
+            if (mode != undefined) this.domains[domainName][2] = mode;
         },
         "defaultPackage": "root",
         "registerPackage": function (packageName, functions) {
