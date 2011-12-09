@@ -54,16 +54,25 @@
             fill(v, keys, value);
         }
     }
-    function extend(hash, other) {
-        var key = "", k;
+    function extend(self, hash, other) {
+        var key = "", k, len = arguments.length;
+        if (len < 3) {
+            other = hash;
+            hash = self;
+            self = this;
+        }
         if (isString(hash)) {
             key = hash + ".";
             hash = other;
         }
-        for (k in hash) {
-            fill(this, key + k, hash[k]);
+        else if (len == 2) {
+            self = hash;
+            hash = other;
         }
-        return this;
+        for (k in hash) {
+            fill(self, key + k, hash[k]);
+        }
+        return self;
     }
     function uncachedAsset(asset) {
         return asset.split(/[\?#]/)[0];
@@ -295,8 +304,8 @@
     }
     function setup(context, reset, initConfig) {
         if (reset || ! ("cfg" in context)) {
-            extend.call(context, will.u.getConfig());
-            if (! ("call" in context)) extend.call(context, basicApi);
+            extend(context, will.u.getConfig());
+            if (! ("call" in context)) extend(context, basicApi);
         }
         if (isFunction(initConfig)) initConfig(context.cfg);
     }
@@ -413,7 +422,7 @@
     }
 
     // The Public API
-    extend.call(basicApi, {
+    extend(basicApi, {
         "call": function (selector) {
             return stubsTo(this, selector);
         },
@@ -446,7 +455,7 @@
             return this;
         }
     });
-    extend.call(WillJS.prototype, basicApi);
+    extend(WillJS.prototype, basicApi);
 
     basicApi.u[loadComponentMethodName] = function (context, url, completeCallback) {
         if (loadComponentLoaded) {
@@ -474,7 +483,7 @@
         "newProcessor": newProcessor,
         "getConfig": function () {
             var self = this, cfg;
-            cfg = extend.call(new self.Defaults(), {
+            cfg = extend(new self.Defaults(), {
                 "processors": new self.Processors(),
                 "domains": {
                     "local": ["json", "/javascripts/will/"]
@@ -487,7 +496,7 @@
         "Defaults": function () {}
     });
     addDefaultProcessors(basicApi.u.Processors.prototype);
-    extend.call(basicApi.u.Defaults.prototype, {
+    extend(basicApi.u.Defaults.prototype, {
         "mode": will.modes.DEV,
         "version": "1.1",
         "addDomain": function (domainName, urlPrefix, asJS, mode) {
