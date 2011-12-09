@@ -199,7 +199,7 @@
             run: func,
             sched: function () {
                 var self = this;
-                setTimeout(function () {self.process();}, 2);
+                setTimeout(function () {self.process();}, 0);
             },
             process: function (args) {
                 var self = this,
@@ -212,7 +212,7 @@
                             self.active = true;
                             self.process();
                         }
-                    }, 5);
+                    }, 2);
                 } else {
                     if (queue.length) {
                         args = queue.shift();
