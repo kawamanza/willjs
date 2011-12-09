@@ -500,7 +500,7 @@
         "mode": will.modes.DEV,
         "version": "1.1",
         "addDomain": function (domainName, urlPrefix, asJS, mode) {
-            this.domains[domainName] = [(asJS ? "js" : "json"), urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/")];
+            this.domains[domainName] = [(isString(asJS) ? asJS : asJS ? "js" : "json"), urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/")];
             if (mode != undefined) this.domains[domainName][2] = mode;
         },
         "defaultPackage": "root",
