@@ -14,13 +14,13 @@
         config.queryString = "_=useThisForCaching";
 
         config.addDomain(
-            "local",                                       // default domain
-            "/javascripts/will/",                          // default component domain (repository)
+            "local",                                       // default domain name
+            "/javascripts/will/",                          // default repository path
             false);                                        // load by ajax (json/jsonp, default)
 
         config.addDomain(
-            "remote",                                      // another domain sample
-            "/javascripts/will-scripts/",                  // components repository
+            "remote",                                      // customized domain name
+            "/javascripts/will-scripts/",                  // components repository path
             true,                                          // load as script (js)
             will.modes.PROD);                              // mode (optional, null: use default)
 
@@ -29,7 +29,12 @@
 
 ## Components
 
-The components are automatically loaded by AJAX and stored on Will's registry.
+A WillJS component is a simple implementation to perform an action to the user.
+The components (and they dependencies) are loaded just when they are called for the
+first time. This allows you to do on-demand loading of assets (js/css) for your webpage
+only when the user accesses the resource.
+
+The structure of a component is a JSON with a little set of attributes. Example:
 
     // {host}/javascripts/will/doSomething.json
     {
@@ -48,10 +53,24 @@ The components are automatically loaded by AJAX and stored on Will's registry.
         ]
     }
 
+  - The *impl* attribute is the main function that will perform the operation asynchronously.
+  - The *getImpl* attribute is optional, and allow you to have a context to create some
+    global variables or private functions that will be used into your *impl* function.
+    The *getImpl* function must return another function that will be the main function
+    of the component. The *impl* attribute must not be present in this case.
+  - The *rescue* attribute is a function that will be invoked when some dependency could
+    not be loaded.
+  - The *assets* attribute is a list of CSSs and/or JSs to be loaded before performs the
+    component's function for the first time.
+
+The components are loaded by AJAX and stored on WillJS's registry. This operation is
+triggered when the component is invoked for the first time.
+
 ### Adding components directly
 
-If you prefere to load components as script, you need to perform the instruction below:
+If you prefer to load components as script, you need to execute the instruction like below:
 
+    // {host}/javascripts/will/doSomething.js
     will.addComponent("doSomething", {
         // impl: function () {/* the component, or... */}, // optional
         getImpl: function (will) {
@@ -112,6 +131,8 @@ When grouping components inside a package, the JSON components file must be like
 
 ## Sequential Processors
 
+This feature is available for plugin development and for advanced usage.
+
     var shouldWaitForCallback = true;                          // just for this example
     will.addProcessor("processorName", function (param1, param2) {
         var processor = this;
@@ -133,11 +154,13 @@ When grouping components inside a package, the JSON components file must be like
 
 ## Customized Will.js
 
+You may have other instances of WillJS if you want.
+
     will.as("myWill").configure(function (config) {
         config.mode = will.modes.DEV;                      // default mode
         config.addDomain(
-            "local",                                       // default domain
-            "/javascripts/will/");                         // default component domain (repository)
+            "local",                                       // default domain name
+            "/javascripts/will/");                         // default repository path
         config.defaultPackage = "root";                    // default package
     });
     // Public API
