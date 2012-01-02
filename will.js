@@ -121,7 +121,7 @@
             el = elements[i++];
             if (tagIdOf(el)[0] === id) {
                 if (/\@/.test(asset) && css && el.getAttribute("href") != href) el.setAttribute("href", href);
-                return true;
+                return [css, el];
             }
         }
         return false;
@@ -274,11 +274,12 @@
         });
         processors.loadDependenciesAndCall = newProcessor(function (context, entry, args) {
             var self = this, debug = context.cfg.debug,
-                assets = entry.assets || entry.libs, asset;
+                assets = entry.assets || entry.libs, asset, r;
             if (assets.length) {
                 asset = assets[0];
-                if (isLoaded(asset)) {
+                if (r = isLoaded(asset)) {
                     assets.shift();
+                    if (r[0]) entry.lastCss = r[1];
                     entry.impl.apply(undefined, args);
                 } else {
                     if (debug) debug("** loading asset \"" + asset + "\"");
