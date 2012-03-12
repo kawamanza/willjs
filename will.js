@@ -5,7 +5,7 @@
  * Copyright 2011, Marcelo Manzan
  * Dual licensed under the MIT or GPL Version 2 licenses.
  *
- * Date: Wed Dec 21 11:14:44 2011 -0200
+ * Date: Mon Mar 12 01:23:13 2011 -0300
  */
 (function (window, globalName, undefined) {
     "use strict";
@@ -168,8 +168,7 @@
     function loadComponent_jQuery(context, url, completeCallback) {
         var cache = (context.cfg.mode === will.modes.PROD),
             suffix = context.cfg.queryString,
-            jsonp, done = false, location = window.location, debug = context.cfg.debug;
-        // jsonp = (/^(\w+:)?\/\/([^\/]+)/.test(url) && (RegExp.$2 != location.host || RegExp.$1 && RegExp.$1 != location.protocol));
+            jsonp, done = false, debug = context.cfg.debug;
         if ( jsonp = /\.jsonp$/.test(url) ) {
             url = url.replace(/p$/, "");
         }
@@ -502,7 +501,7 @@
     addDefaultProcessors(basicApi.u.Processors.prototype);
     extend(basicApi.u.Defaults.prototype, {
         "mode": will.modes.DEV,
-        "version": "1.2",
+        "version": "1.2.1",
         "addDomain": function (domainName, urlPrefix, asJS, mode) {
             this.domains[domainName] = [(isString(asJS) ? asJS : asJS ? "js" : "json"), urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/")];
             if (mode != undefined) this.domains[domainName][2] = mode;
