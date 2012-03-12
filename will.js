@@ -169,7 +169,10 @@
         var cache = (context.cfg.mode === will.modes.PROD),
             suffix = context.cfg.queryString,
             jsonp, done = false, location = window.location, debug = context.cfg.debug;
-        jsonp = (/^(\w+:)?\/\/([^\/]+)/.test(url) && (RegExp.$2 != location.host || RegExp.$1 && RegExp.$1 != location.protocol));
+        // jsonp = (/^(\w+:)?\/\/([^\/]+)/.test(url) && (RegExp.$2 != location.host || RegExp.$1 && RegExp.$1 != location.protocol));
+        if ( jsonp = /\.jsonp$/.test(url) ) {
+            url = url.replace(/p$/, "");
+        }
         if (suffix) {
             cache = true;
             url = url + "?" + suffix;
@@ -352,7 +355,7 @@
             }
         }
     }
-    function pathFor(context, strPath, format) {
+    function pathFor(context, strPath) {
         var cfg = context.cfg,
             d = cfg.domains,
             domainName = "local",
@@ -365,7 +368,7 @@
         }
         if (!d[domainName]) domainName = "local"
         return {
-            format: format || d[domainName][0],
+            format: d[domainName][0],
             domain: d[domainName][1],
             mode: d[domainName][2],
             domainName: domainName,
