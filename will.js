@@ -78,6 +78,7 @@
         return asset.split(/[\?#]/)[0];
     }
     function tagIdOf(asset) {
+        // sid = [id, href, isCss, "link|script", prepend]
         var sid = undefined, seg;
         if (isString(asset)) {
             asset = uncachedAsset(asset);
@@ -126,15 +127,18 @@
         }
         return false;
     }
-    function bindLoadBehaviourTo(element, parent, completeCallback) {
+    function bindLoadBehaviourTo(element, parent, completeCallback, removeElement) {
         var done = false;
         element.onload = element.onreadystatechange = function () {
             var rs = this.readyState;
             if (!done && (!rs || rs === "loaded" || rs === "complete")) {
-               done = true;
-               completeCallback("success");
-               element.onload = element.onreadystatechange = undefined;
-               element.onerror = element.onabort = undefined;
+                done = true;
+                completeCallback("success");
+                element.onload = element.onreadystatechange = undefined;
+                element.onerror = element.onabort = undefined;
+                if (removeElement && parent && element.parentNode) {
+                    parent.removeChild(element);
+                }
            }
         };
         element.onerror = element.onabort = function () {
@@ -150,14 +154,14 @@
     function getHead() {
         return document.getElementsByTagName("head")[0] || document.documentElement;
     }
-    function loadDependency(context, src, lastCss, completeCallback) {
+    function loadDependency(context, src, lastCss, completeCallback, removeElement) {
         var head = getHead(), sid = tagIdOf(src), css = sid[2], element,
             suffix = context.cfg.queryString;
         element = document.createElement(sid[3]);
         element.setAttribute(elementIdData, sid[0]);
         if (css) element.setAttribute("rel", "stylesheet");
         element[css ? "href" : "src"] = sid[1] + (suffix ? "?" + suffix : "");
-        if (!css) bindLoadBehaviourTo(element, head, completeCallback);
+        if (!css) bindLoadBehaviourTo(element, head, completeCallback, removeElement);
         if (sid[4] && head.firstChild) {
             head.insertBefore(element, lastCss || head.firstChild);
         } else {
@@ -246,7 +250,7 @@
             }
             if (path.format == "js") {
                 url = path.toString().replace(/[:\.]/g, "_") + "@" + url;
-                requireAssets(context, [url])(function (status) {
+                requireAssets(context, [url], true)(function (status) {
                     try {
                         if (status == "success") {
                             impl = entry.impl;
@@ -297,7 +301,7 @@
                         } finally {
                             self.sched();
                         }
-                    });
+                    }, entry.removeElement);
                     return false;
                 }
             } else {
@@ -407,7 +411,7 @@
             process(context, "callComponent", [context, path, args]);
         };
     }
-    function requireAssets(context, assets) {
+    function requireAssets(context, assets, removeElement) {
         var entry = {assets: assets};
         return function (loadCallback) {
             if (entry.impl) return;
@@ -420,6 +424,7 @@
             }
             implWrapper(context, entry, func);
             entry.rescue = rescue;
+            entry.removeElement = removeElement;
             entry.impl();
         };
     }
@@ -430,7 +435,7 @@
             return stubsTo(this, selector);
         },
         "use": function (assets) {
-            return requireAssets(this, isArray(assets) ? assets : slice.call(arguments, 0));
+            return requireAssets(this, isArray(assets) ? assets : slice.call(arguments, 0), false);
         },
         "addComponent": function (selector, json) {
             var context = this;
