@@ -154,6 +154,21 @@
     function getHead() {
         return document.getElementsByTagName("head")[0] || document.documentElement;
     }
+    function cssOrder(element1, element2) {
+        var i, links = document.getElementsByTagName("link"), len = links.length;
+        for(i = 0; i < len; i++) {
+            if (links[i] === element1) return true;
+            if (links[i] === element2) return false;
+        }
+    }
+    function insertCss(element, lastCss) {
+        lastCss = lastCss || document.getElementsByTagName("link")[0];
+        if (lastCss) {
+            getHead().insertBefore(element, lastCss);
+        } else {
+            getHead().appendChild(element);
+        }
+    }
     function loadDependency(context, src, lastCss, completeCallback, removeElement) {
         var head = getHead(), sid = tagIdOf(src), css = sid[2], element,
             suffix = context.cfg.queryString;
@@ -161,13 +176,19 @@
         element.setAttribute(elementIdData, sid[0]);
         if (css) element.setAttribute("rel", "stylesheet");
         element[css ? "href" : "src"] = sid[1] + (suffix ? "?" + suffix : "");
-        if (!css) bindLoadBehaviourTo(element, head, completeCallback, removeElement);
-        if (sid[4] && head.firstChild) {
-            head.insertBefore(element, lastCss || head.firstChild);
+        if (css) {
+            if (sid[4]) {
+                insertCss(element, lastCss);
+            } else if (lastCss && lastCss.nextSibling) {
+                head.insertBefore(element, lastCss.nextSibling);
+            } else {
+                insertCss(element);
+            }
+            completeCallback("success", element);
         } else {
+            bindLoadBehaviourTo(element, head, completeCallback, removeElement);
             head.appendChild(element);
         }
-        if (css) completeCallback("success", element);
     }
     function loadComponent_jQuery(context, url, completeCallback) {
         var cache = (context.cfg.mode === will.modes.PROD),
@@ -280,20 +301,35 @@
         });
         processors.loadDependenciesAndCall = newProcessor(function (context, entry, args) {
             var self = this, debug = context.cfg.debug,
-                assets = entry.assets || entry.libs, asset, r;
+                assets = entry.assets || entry.libs, asset, r, pre, el;
             if (assets.length) {
                 asset = assets[0];
+                pre = /^(?:[^@]+@)?\^/.test(asset);
                 if (r = isLoaded(asset)) {
                     assets.shift();
-                    if (r[0]) entry.lastCss = r[1];
+                    if (r[0]) {
+                        if (entry.lastCss) {
+                            el = entry.bottomCss.nextSibling;
+                            if (pre && cssOrder(entry.lastCss, r[1])) {
+                                insertCss(r[1], entry.lastCss);
+                            } else if (el && cssOrder(r[1], entry.bottomCss)) {
+                                insertCss(r[1], el);
+                            }
+                        }
+                        if (!(entry.lastCss && pre)) entry.bottomCss = r[1];
+                        entry.lastCss = r[1];
+                    }
                     entry.impl.apply(undefined, args);
                 } else {
                     if (debug) debug("** loading asset \"" + asset + "\"");
-                    loadDependency(context, asset, entry.lastCss, function (status, css) {
+                    loadDependency(context, asset, entry[pre ? "lastCss" : "bottomCss"], function (status, css) {
                         try {
                             if (status === "success") {
                                 assets.shift();
-                                if (css) entry.lastCss = css;
+                                if (css) {
+                                    if (!(entry.lastCss && pre)) entry.bottomCss = css;
+                                    entry.lastCss = css;
+                                }
                                 entry.impl.apply(undefined, args);
                             } else {
                                 entry.rescue.apply(undefined, args);
