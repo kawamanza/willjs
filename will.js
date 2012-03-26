@@ -11,7 +11,7 @@
     "use strict";
     var will, basicApi = {},
         elementIdData = "data-willjs-id",
-        SID_PATTERN = /^([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.(?:css|js)$/,
+        SID_PATTERN = /^\^?([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.(?:css|js)$/,
         slice = Array.prototype.slice,
         toString = Object.prototype.toString,
         loadComponentLoaded = false,
