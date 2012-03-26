@@ -1,5 +1,5 @@
-describe("WillJS object", function () {
-    it("should directly load CSS in order", function () {
+describe("WillJS API", function () {
+    it("should directly load CSSs and organize CSS hierarchy", function () {
         var loadDone = false, returnStatus = "initial";
         runs(function () {
             willjs.use(
@@ -47,9 +47,9 @@ describe("WillJS object", function () {
                 "e.css"
             );
         });
-    }); // it should directly load CSS in order */
+    }); // it should directly load CSSs and organize CSS hierarchy */
 
-    it("should load CSS in order using '^'", function () {
+    it("should load CSSs using '^' and organize CSS hierarchy", function () {
         var loadDone = false, returnStatus = "initial";
         runs(function () {
             willjs.use(
@@ -97,5 +97,5 @@ describe("WillJS object", function () {
                 "j.css"
             );
         });
-    }); // it should load CSS in order using '^' */
+    }); // it should load CSSs using '^' and organize CSS hierarchy */
 });

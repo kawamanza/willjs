@@ -11,11 +11,11 @@
   <script type="text/javascript" src="jasmine-1.1.0/jasmine-html.js"></script>
 
   <!-- include source files here... -->
-  <script type="text/javascript" src="spec/SpecHelper.js"></script>
-  <script type="text/javascript" src="spec/WillJSSpec.js"></script>
+  <script type="text/javascript" src="will.js"></script>
 
   <!-- include spec files here... -->
-  <script type="text/javascript" src="will.js"></script>
+  <script type="text/javascript" src="spec/SpecHelper.js"></script>
+  <script type="text/javascript" src="spec/WillJS_API_Spec.js"></script>
 
   <script type="text/javascript">
     (function() {
@@ -41,6 +41,8 @@
 
       function execJasmine() {
         jasmineEnv.execute();
+        document.getElementById("__jasmine_TrivialReporter_showPassed__").click();
+        document.getElementById("__jasmine_TrivialReporter_showSkipped__").click();
       }
 
     })();
