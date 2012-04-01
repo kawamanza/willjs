@@ -1,14 +1,17 @@
 /*!
- * WillJS JavaScript Library v1.2
+ * WillJS JavaScript Library v1.2.2
  * http://github.com/kawamanza/will.js
  *
- * Copyright 2011, Marcelo Manzan
+ * Copyright 2011-2012, Marcelo Manzan
  * Dual licensed under the MIT or GPL Version 2 licenses.
  *
- * Date: Mon Mar 12 01:23:13 2011 -0300
+ * Date: Sun Apr 01 17:09:14 2012 -0300
  */
 (function (window, globalName, undefined) {
     "use strict";
+
+    // -- Private Variables ----------------------------------------------------
+
     var will, basicApi = {},
         elementIdData = "data-willjs-id",
         SID_PATTERN = /^\^?([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.(?:css|js)$/,
@@ -17,6 +20,9 @@
         loadComponentLoaded = false,
         loadComponentMethodName = "loadComponent",
         document = window.document;
+
+    // -- Private Methods ------------------------------------------------------
+
     function WillJS(name, prepare) {
         this.name = name;
         if (prepare) setup(this, false);
@@ -169,6 +175,48 @@
             getHead().appendChild(element);
         }
     }
+    function newProcessor(func) {
+        return {
+            queue: [],
+            active: false,
+            run: func,
+            sched: function () {
+                var self = this;
+                setTimeout(function () {self.process();}, 0);
+            },
+            process: function (args) {
+                var self = this,
+                    queue = self.queue;
+                if (arguments.length) {
+                    if (isntObject(args) || !isArray(args)) args = [args];
+                    queue.push(args);
+                    setTimeout(function () {
+                        if (queue.length && !self.active) {
+                            self.active = true;
+                            self.process();
+                        }
+                    }, 2);
+                } else {
+                    if (queue.length) {
+                        args = queue.shift();
+                        try {
+                            if (self.run.apply(self, args) !== false){
+                                self.sched();
+                            }
+                        } catch (e) {
+                            self.sched();
+                            throw e;
+                        }
+                    } else {
+                        self.active = false;
+                    }
+                }
+            }
+        };
+    }
+
+    // -- Context Methods ------------------------------------------------------
+
     function loadDependency(context, src, lastCss, completeCallback, removeElement) {
         var head = getHead(), sid = tagIdOf(src), css = sid[2], element,
             suffix = context.cfg.queryString;
@@ -219,135 +267,9 @@
             url: url
         });
     }
-    function newProcessor(func) {
-        return {
-            queue: [],
-            active: false,
-            run: func,
-            sched: function () {
-                var self = this;
-                setTimeout(function () {self.process();}, 0);
-            },
-            process: function (args) {
-                var self = this,
-                    queue = self.queue;
-                if (arguments.length) {
-                    if (isntObject(args) || !isArray(args)) args = [args];
-                    queue.push(args);
-                    setTimeout(function () {
-                        if (queue.length && !self.active) {
-                            self.active = true;
-                            self.process();
-                        }
-                    }, 2);
-                } else {
-                    if (queue.length) {
-                        args = queue.shift();
-                        try {
-                            if (self.run.apply(self, args) !== false){
-                                self.sched();
-                            }
-                        } catch (e) {
-                            self.sched();
-                            throw e;
-                        }
-                    } else {
-                        self.active = false;
-                    }
-                }
-            }
-        };
-    }
-    function addDefaultProcessors(processors) {
-        processors.callComponent = newProcessor(function (context, path, args) {
-            var self = this,
-                registry = context.registry,
-                url = urlFor(context, path),
-                entry = entryOf(registry, path),
-                impl = entry.impl;
-            if (impl) {
-                impl.apply(undefined, args);
-                return;
-            }
-            if (path.format == "js") {
-                url = path.toString().replace(/[:\.]/g, "_") + "@" + url;
-                requireAssets(context, [url], true)(function (status) {
-                    try {
-                        if (status == "success") {
-                            impl = entry.impl;
-                            if (impl) impl.apply(undefined, args);
-                        }
-                    } finally {
-                        self.sched();
-                    }
-                });
-            } else {
-                will.u[loadComponentMethodName](context, url, function (statusCode, data) {
-                    try {
-                        if (statusCode !== 200) {
-                            throw "could not load component: " + path;
-                        }
-                        if (isString(data)) data = eval("("+data+")");
-                        if (isntObject(data)) return;
-                        registerFunctions(context, registry, data, path);
-                        impl = entry.impl;
-                        if (impl) impl.apply(undefined, args);
-                    } finally {
-                        self.sched();
-                    }
-                });
-            }
-            return false;
-        });
-        processors.loadDependenciesAndCall = newProcessor(function (context, entry, args) {
-            var self = this, debug = context.cfg.debug,
-                assets = entry.assets || entry.libs, asset, r, pre, el;
-            if (assets.length) {
-                asset = assets[0];
-                pre = /^(?:[^@]+@)?\^/.test(asset);
-                if (r = isLoaded(asset)) {
-                    assets.shift();
-                    if (r[0]) {
-                        if (entry.lastCss) {
-                            el = entry.bottomCss.nextSibling;
-                            if (pre && cssOrder(entry.lastCss, r[1])) {
-                                insertCss(r[1], entry.lastCss);
-                            } else if (el && cssOrder(r[1], entry.bottomCss)) {
-                                insertCss(r[1], el);
-                            }
-                        }
-                        if (!(entry.lastCss && pre)) entry.bottomCss = r[1];
-                        entry.lastCss = r[1];
-                    }
-                    entry.impl.apply(undefined, args);
-                } else {
-                    if (debug) debug("** loading asset \"" + asset + "\"");
-                    loadDependency(context, asset, entry[pre ? "lastCss" : "bottomCss"], function (status, css) {
-                        try {
-                            if (status === "success") {
-                                assets.shift();
-                                if (css) {
-                                    if (!(entry.lastCss && pre)) entry.bottomCss = css;
-                                    entry.lastCss = css;
-                                }
-                                entry.impl.apply(undefined, args);
-                            } else {
-                                entry.rescue.apply(undefined, args);
-                            }
-                        } finally {
-                            self.sched();
-                        }
-                    }, entry.removeElement);
-                    return false;
-                }
-            } else {
-                entry.impl.apply(undefined, args);
-            }
-        });
-    }
     function setup(context, reset, initConfig) {
         if (reset || ! ("cfg" in context)) {
-            extend(context, will.u.getConfig());
+            extend(context, getConfig());
             if (! ("call" in context)) extend(context, basicApi);
         }
         if (isFunction(initConfig)) initConfig(context.cfg);
@@ -465,7 +387,8 @@
         };
     }
 
-    // The Public API
+    // -- The Public API -------------------------------------------------------
+
     extend(basicApi, {
         "call": function (selector) {
             return stubsTo(this, selector);
@@ -501,6 +424,8 @@
     });
     extend(WillJS.prototype, basicApi);
 
+    // -- Helper Methods -------------------------------------------------------
+
     basicApi.u[loadComponentMethodName] = function (context, url, completeCallback) {
         if (loadComponentLoaded) {
             completeCallback(500, "");
@@ -519,30 +444,25 @@
         });
     };
 
-    // Settings
-    basicApi.u.extend({
-        "pathFor": pathFor,
-        "urlFor": urlFor,
-        "implWrapper": implWrapper,
-        "newProcessor": newProcessor,
-        "getConfig": function () {
-            var self = this, cfg;
-            cfg = extend(new self.Defaults(), {
-                "processors": new self.Processors(),
-                "domains": {
-                    "local": ["json", "/javascripts/will/"]
-                },
-                "packages": {}
-            });
-            return {cfg: cfg, registry: {}};
-        },
-        "Processors": function () {},
-        "Defaults": function () {}
-    });
-    addDefaultProcessors(basicApi.u.Processors.prototype);
-    extend(basicApi.u.Defaults.prototype, {
+    // -- Config Methods -------------------------------------------------------
+
+    function getConfig() {
+        return {
+            registry: {},
+            cfg: extend(new Defaults(), {
+                    "processors": new Processors(),
+                    "domains": {
+                        "local": ["json", "/javascripts/will/"]
+                    },
+                    "packages": {}
+                })
+        };
+    }
+
+    function Defaults() {}
+    extend(Defaults.prototype, {
         "mode": will.modes.DEV,
-        "version": "1.2.1",
+        "version": "1.2.2",
         "addDomain": function (domainName, urlPrefix, asJS, mode) {
             this.domains[domainName] = [(isString(asJS) ? asJS : asJS ? "js" : "json"), urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/")];
             if (mode != undefined) this.domains[domainName][2] = mode;
@@ -557,6 +477,96 @@
         }
     });
 
-    // Initial setup
+    function Processors() {}
+    extend(Processors.prototype, {
+        "callComponent": newProcessor(function (context, path, args) {
+            var self = this,
+                registry = context.registry,
+                url = urlFor(context, path),
+                entry = entryOf(registry, path),
+                impl = entry.impl;
+            if (impl) {
+                impl.apply(undefined, args);
+                return;
+            }
+            if (path.format == "js") {
+                url = path.toString().replace(/[:\.]/g, "_") + "@" + url;
+                requireAssets(context, [url], true)(function (status) {
+                    try {
+                        if (status == "success") {
+                            impl = entry.impl;
+                            if (impl) impl.apply(undefined, args);
+                        }
+                    } finally {
+                        self.sched();
+                    }
+                });
+            } else {
+                will.u[loadComponentMethodName](context, url, function (statusCode, data) {
+                    try {
+                        if (statusCode !== 200) {
+                            throw "could not load component: " + path;
+                        }
+                        if (isString(data)) data = eval("("+data+")");
+                        if (isntObject(data)) return;
+                        registerFunctions(context, registry, data, path);
+                        impl = entry.impl;
+                        if (impl) impl.apply(undefined, args);
+                    } finally {
+                        self.sched();
+                    }
+                });
+            }
+            return false;
+        }),
+        "loadDependenciesAndCall": newProcessor(function (context, entry, args) {
+            var self = this, debug = context.cfg.debug,
+                assets = entry.assets || entry.libs, asset, r, pre, el;
+            if (assets.length) {
+                asset = assets[0];
+                pre = /^(?:[^@]+@)?\^/.test(asset);
+                if (r = isLoaded(asset)) {
+                    assets.shift();
+                    if (r[0]) {
+                        if (entry.lastCss) {
+                            el = entry.bottomCss.nextSibling;
+                            if (pre && cssOrder(entry.lastCss, r[1])) {
+                                insertCss(r[1], entry.lastCss);
+                            } else if (el && cssOrder(r[1], entry.bottomCss)) {
+                                insertCss(r[1], el);
+                            }
+                        }
+                        if (!(entry.lastCss && pre)) entry.bottomCss = r[1];
+                        entry.lastCss = r[1];
+                    }
+                    entry.impl.apply(undefined, args);
+                } else {
+                    if (debug) debug("** loading asset \"" + asset + "\"");
+                    loadDependency(context, asset, entry[pre ? "lastCss" : "bottomCss"], function (status, css) {
+                        try {
+                            if (status === "success") {
+                                assets.shift();
+                                if (css) {
+                                    if (!(entry.lastCss && pre)) entry.bottomCss = css;
+                                    entry.lastCss = css;
+                                }
+                                entry.impl.apply(undefined, args);
+                            } else {
+                                entry.rescue.apply(undefined, args);
+                            }
+                        } finally {
+                            self.sched();
+                        }
+                    }, entry.removeElement);
+                    return false;
+                }
+            } else {
+                entry.impl.apply(undefined, args);
+            }
+        })
+    });
+
+    // -- Initial Setup --------------------------------------------------------
+
     setup(will, false);
 })(window, "will", null);
