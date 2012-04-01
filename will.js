@@ -70,7 +70,7 @@
             hash = other;
         }
         for (k in hash) {
-            fill(self, key + k, hash[k]);
+            if (hash.hasOwnProperty(k)) fill(self, key + k, hash[k]);
         }
         return self;
     }
