@@ -1,0 +1,5 @@
+{
+    "impl": function (value) {
+        this.result = "firstComponent executed with: " + value;
+    }
+}

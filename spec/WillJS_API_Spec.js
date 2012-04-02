@@ -1,4 +1,18 @@
-describe("WillJS API", function () {
+describe("WillJS API 'call' method", function () {
+    it("should load firstComponent component", function () {
+        runs(function () {
+            willjs.call("firstComponent")("testing with Jasmine");
+        });
+        waitsFor(function () {
+            return ("result" in willjs);
+        }, "component not loaded", 500);
+        runs(function () {
+            expect(willjs.result).toBe("firstComponent executed with: testing with Jasmine");
+        });
+    }); // it should load firstComponent component */
+});
+
+describe("WillJS API 'use' method loading CSSs", function () {
     it("should directly load CSSs and organize CSS hierarchy", function () {
         var loadDone = false, returnStatus = "initial";
         runs(function () {

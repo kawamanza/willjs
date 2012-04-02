@@ -13,16 +13,22 @@ beforeEach(function() {
     });
     removeWillJSElements();
     if (window.willjs) delete window.willjs;
-    window.will.as("willjs");
+    window.will.as("willjs").configure(function (config) {
+        config.addDomain("local", "/spec/components");
+    });
 });
 
 function removeWillJSElements(list) {
-    var i, len, node;
+    var i, len, node, id;
     if (list) {
         if (typeof list == "string") list = getWillJSElements(list);
         for(i = 0, len = list.length; i < len; i++) {
             node = list[i];
-            if (node.getAttribute("data-willjs-id") == null) continue;
+            if ((id = node.getAttribute("data-willjs-id")) == null) continue;
+            if (id == "jquery") {
+                node.removeAttribute("data-willjs-id");
+                continue;
+            }
             if (node.parentNode) node.parentNode.removeChild(node);
         }
     } else {
