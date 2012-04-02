@@ -80,6 +80,9 @@
         }
         return self;
     }
+    function scopedFunction(scope, func) {
+        return function () {return func.apply(scope, arguments);};
+    }
     function uncachedAsset(asset) {
         return asset.split(/[\?#]/)[0];
     }
@@ -283,8 +286,7 @@
         return p[n] || (p[n] = {rescue: function () {/*delete p[n];*/}});
     }
     function implWrapper(context, entry, f) {
-        var func = function () {return f.apply(context, arguments);},
-            impl = "impl", name = impl;
+        var impl = "impl", name = impl;
         if (isString(f)) {
             name = f;
             f = entry[name];
@@ -294,7 +296,7 @@
             if (assets && assets.length) {
                 process(context, "loadDependenciesAndCall", [context, entry, args]);
             } else {
-                entry[name] = (name == impl ? func : f);
+                entry[name] = (name == impl ? scopedFunction(context, f) : f);
                 return entry[name].apply(entry, args);
             }
         };
