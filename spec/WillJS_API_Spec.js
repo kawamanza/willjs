@@ -5,16 +5,21 @@ describe("WillJS API 'call' method", function () {
         });
         waitsFor(function () {
             return ("result" in willjs);
-        }, "component not loaded", 500);
+        }, "component not loaded", 1000);
         runs(function () {
             expect(willjs.result).toBe("firstComponent executed with: testing with Jasmine");
+            var h = willjs.cfg.debug.history;
+            expect(h.length).toBe(2);
+            expect(h[h.length -1]).toBe(" * successful loaded /spec/components/firstComponent.json");
         });
     }); // it should load firstComponent component */
 });
 
 describe("WillJS API 'use' method loading CSSs", function () {
     it("should directly load CSSs and organize CSS hierarchy", function () {
-        var loadDone = false, returnStatus = "initial";
+        var loadDone = false,
+            h = willjs.cfg.debug.history,
+            returnStatus = "initial";
         runs(function () {
             willjs.use(
                 "d.css",
@@ -29,6 +34,7 @@ describe("WillJS API 'use' method loading CSSs", function () {
         }, "first CSS loading never completed", 200);
         runs(function () {
             expect(returnStatus).toBe("success");
+            expect(h.length).toBe(2);
             expect(getWillJSElements("link")).toHaveSources(
                 "d.css",
                 "b.css"
@@ -53,6 +59,7 @@ describe("WillJS API 'use' method loading CSSs", function () {
         }, "second CSS loading never completed", 200);
         runs(function () {
             expect(returnStatus).toBe("success");
+            expect(h.length).toBe(5);
             expect(getWillJSElements("link")).toHaveSources(
                 "a.css",
                 "b.css",
@@ -64,7 +71,9 @@ describe("WillJS API 'use' method loading CSSs", function () {
     }); // it should directly load CSSs and organize CSS hierarchy */
 
     it("should load CSSs using '^' and organize CSS hierarchy", function () {
-        var loadDone = false, returnStatus = "initial";
+        var loadDone = false,
+            h = willjs.cfg.debug.history,
+            returnStatus = "initial";
         runs(function () {
             willjs.use(
                 "g.css",
@@ -79,6 +88,7 @@ describe("WillJS API 'use' method loading CSSs", function () {
         }, "first CSS loading never completed", 200);
         runs(function () {
             expect(returnStatus).toBe("success");
+            expect(h.length).toBe(2);
             expect(getWillJSElements("link")).toHaveSources(
                 "i.css",
                 "g.css"
@@ -103,6 +113,7 @@ describe("WillJS API 'use' method loading CSSs", function () {
         }, "second CSS loading never completed", 200);
         runs(function () {
             expect(returnStatus).toBe("success");
+            expect(h.length).toBe(5);
             expect(getWillJSElements("link")).toHaveSources(
                 "f.css",
                 "g.css",
