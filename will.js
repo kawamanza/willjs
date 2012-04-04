@@ -226,6 +226,7 @@
         element = document.createElement(sid[3]);
         element.setAttribute(elementIdData, sid[0]);
         if (css) element.setAttribute("rel", "stylesheet");
+        if (isFunction(suffix)) {suffix = suffix(sid[1]);}
         element[css ? "href" : "src"] = sid[1] + (suffix ? "?" + suffix : "");
         if (css) {
             if (sid[4]) {
@@ -248,6 +249,7 @@
         if ( jsonp = /\.jsonp$/.test(url) ) {
             url = url.replace(/p$/, "");
         }
+        if (isFunction(suffix)) {suffix = suffix(url);}
         if (suffix) {
             cache = true;
             url = url + "?" + suffix;
