@@ -178,45 +178,43 @@
             getHead().appendChild(element);
         }
     }
-    function newProcessor(func) {
-        return {
-            queue: [],
-            active: false,
-            run: func,
-            sched: function () {
-                var self = this;
-                setTimeout(function () {self.process();}, 0);
-            },
-            process: function (args) {
-                var self = this,
-                    queue = self.queue;
-                if (arguments.length) {
-                    if (isntObject(args) || !isArray(args)) args = [args];
-                    queue.push(args);
-                    setTimeout(function () {
-                        if (queue.length && !self.active) {
-                            self.active = true;
-                            self.process();
-                        }
-                    }, 2);
-                } else {
-                    if (queue.length) {
-                        args = queue.shift();
-                        try {
-                            if (self.run.apply(self, args) !== false){
-                                self.sched();
-                            }
-                        } catch (e) {
-                            self.sched();
-                            throw e;
-                        }
-                    } else {
-                        self.active = false;
+    function Processor(func) {
+        extend(this, {queue: [], active: false, run: func});
+    }
+    extend(Processor.prototype, {
+        sched: function () {
+            var self = this;
+            setTimeout(function () {self.process();}, 0);
+        },
+        process: function (args) {
+            var self = this,
+                queue = self.queue;
+            if (arguments.length) {
+                if (isntObject(args) || !isArray(args)) args = [args];
+                queue.push(args);
+                setTimeout(function () {
+                    if (queue.length && !self.active) {
+                        self.active = true;
+                        self.process();
                     }
+                }, 2);
+            } else {
+                if (queue.length) {
+                    args = queue.shift();
+                    try {
+                        if (self.run.apply(self, args) !== false){
+                            self.sched();
+                        }
+                    } catch (e) {
+                        self.sched();
+                        throw e;
+                    }
+                } else {
+                    self.active = false;
                 }
             }
-        };
-    }
+        }
+    });
 
     // -- Context Methods ------------------------------------------------------
 
@@ -361,7 +359,7 @@
         var r = context.cfg.processors,
             p = r[handler];
         if (!p) {
-            p = r[handler] = newProcessor(function(f) {if (isFunction(f)) f();});
+            p = r[handler] = new Processor(function(f) {if (isFunction(f)) f();});
         }
         p.process(args);
     }
@@ -406,7 +404,7 @@
         },
         "addProcessor": function (processorName, func) {
             var r = this.cfg.processors, p = r[processorName];
-            if (!p) this.cfg.processors[processorName] = newProcessor(func);
+            if (!p) this.cfg.processors[processorName] = new Processor(func);
         },
         "process": function (processorName) {
             process(this, processorName, slice.call(arguments, 1));
@@ -483,7 +481,7 @@
 
     function Processors() {}
     extend(Processors.prototype, {
-        "callComponent": newProcessor(function (context, path, args) {
+        "callComponent": new Processor(function (context, path, args) {
             var self = this,
                 registry = context.registry,
                 url = urlFor(context, path),
@@ -523,7 +521,7 @@
             }
             return false;
         }),
-        "loadDependenciesAndCall": newProcessor(function (context, entry, args) {
+        "loadDependenciesAndCall": new Processor(function (context, entry, args) {
             var self = this, debug = context.cfg.debug,
                 assets = entry.assets || entry.libs, asset, r, pre, el;
             if (assets.length) {
