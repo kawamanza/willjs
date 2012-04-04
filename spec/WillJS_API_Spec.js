@@ -77,7 +77,7 @@ describe("WillJS API 'use' method loading CSSs", function () {
         runs(function () {
             willjs.use(
                 "g.css",
-                "^i.css"
+                "^j.css"
             )(function (status) {
                 returnStatus = status;
                 loadDone = true;
@@ -90,7 +90,7 @@ describe("WillJS API 'use' method loading CSSs", function () {
             expect(returnStatus).toBe("success");
             expect(h.length).toBe(2);
             expect(getWillJSElements("link")).toHaveSources(
-                "i.css",
+                "j.css",
                 "g.css"
             );
         });
@@ -99,10 +99,11 @@ describe("WillJS API 'use' method loading CSSs", function () {
             loadDone = false;
             willjs.use(
                 "f.css",
-                "h.css",
+                "i.css",
+                "^h.css",
                 "^g.css",
-                "j.css",
-                "^i.css"
+                "k.css",
+                "^j.css"
             )(function (status) {
                 returnStatus = status;
                 loadDone = true;
@@ -113,13 +114,14 @@ describe("WillJS API 'use' method loading CSSs", function () {
         }, "second CSS loading never completed", 200);
         runs(function () {
             expect(returnStatus).toBe("success");
-            expect(h.length).toBe(5);
+            expect(h.length).toBe(6);
             expect(getWillJSElements("link")).toHaveSources(
                 "f.css",
                 "g.css",
                 "h.css",
                 "i.css",
-                "j.css"
+                "j.css",
+                "k.css"
             );
         });
     }); // it should load CSSs using '^' and organize CSS hierarchy */
