@@ -23,26 +23,87 @@
 
     // -- Private Methods ------------------------------------------------------
 
+    /**
+     * WillJS constructor method
+     * @param {String} name Global variable name (window[name])
+     * @param {Boolean} prepare Run setup
+     * @private
+     */
     function WillJS(name, prepare) {
         this.name = name;
         if (prepare) setup(this, false);
     }
     window[globalName] = will = new WillJS(globalName);
+
+    /**
+     * Verify if a value is of type String
+     *
+     * @method isString
+     * @param {Object} value Object to be verified of type String
+     * @return {Boolean}
+     * @private
+     */
     function isString(value) {
         return typeof value === "string";
     }
+
+    /**
+     * Verify if a value is of type Array
+     *
+     * @method isArray
+     * @param {Object} value Object to be verified of type String
+     * @return {Boolean}
+     * @private
+     */
     function isArray(value) {
         return toString.call(value) === "[object Array]"
     }
+
+    /**
+     * Verify if a value isn't an Object
+     *
+     * @method isntObject
+     * @param {Object} value Object to be verified
+     * @return {Boolean}
+     * @private
+     */
     function isntObject(value) {
         return typeof value !== "object";
     }
+
+    /**
+     * Verify if a value is of type Function
+     *
+     * @method isFunction
+     * @param {Object} value Object to be verified of type Function
+     * @return {Boolean}
+     * @private
+     */
     function isFunction(value) {
         return typeof value === "function";
     }
+
+    /**
+     * Checks if an URL is of kind CSS
+     *
+     * @method isCss
+     * @param {String} href URL of an asset
+     * @return {Boolean}
+     * @private
+     */
     function isCss(href) {
         return /\.css$/.test(href);
     }
+
+    /**
+     * Fetches nested keys on a root Hash and sets the value in the key deeper.
+     *
+     * @method fill
+     * @param {Hash} root Object to be filled
+     * @param {String,Array} keys Nested subkeys to be fetched
+     * @param {Object} value The value
+     * @private
+     */
     function fill(root, keys, value) {
         var key, v;
         if (isString(keys)) {
@@ -60,6 +121,14 @@
             fill(v, keys, value);
         }
     }
+
+    /**
+     * Extends the original hash with attributes of other hash.
+     *
+     * @method extend
+     * @return {Hash} The extended hash.
+     * @protected
+     */
     function extend(self, hash, other) {
         var key = "", k, len = arguments.length;
         if (len < 3) {
@@ -80,62 +149,111 @@
         }
         return self;
     }
+
+    /**
+     * Forces a function to run into a specific scope.
+     *
+     * @method scopedFunction
+     * @param {Object} scope The context
+     * @param {Function} func The original function
+     * @return {Function} A function wrapper
+     * @private
+     */
     function scopedFunction(scope, func) {
         return function () {return func.apply(scope, arguments);};
     }
+
+    /**
+     * Removes the queryString and anchors of an asset URL.
+     *
+     * @method uncachedAsset
+     * @param {String} asset The URL of an asset.
+     * @return {String} The URL without any queryString or anchor suffixes
+     * @private
+     */
     function uncachedAsset(asset) {
         return asset.split(/[\?#]/)[0];
     }
-    function tagIdOf(asset) {
-        // sid = [id, href, isCss, "link|script", prepend]
-        var sid = undefined, seg;
+
+    /**
+     * Gets an object information of an asset (id, href, isCss,
+     * tagName:"link|script", isPrepend).
+     *
+     * @method tagInfoOf
+     * @param {String} asset The URL of an asset
+     * @return {Hash} An object information of the asset
+     * @private
+     */
+    function tagInfoOf(asset) {
+        var info = undefined, seg;
         if (isString(asset)) {
             asset = uncachedAsset(asset);
             if ( /^([\w\-\.]+)\@(.+)$/.test(asset) ) {
-                sid = [RegExp.$1, RegExp.$2];
+                info = {id: RegExp.$1, href: RegExp.$2};
             } else {
                 seg = asset.split(/\//);
                 seg = seg[seg.length -1];
-                sid = [
-                    SID_PATTERN.test(seg)
-                        ? RegExp.$1
-                        : seg,
-                    asset
-                ];
-                if (isCss(sid[1])) {
-                    seg = sid[1].split(/\/+/);
+                info = {
+                    id: (SID_PATTERN.test(seg) ? RegExp.$1 : seg),
+                    href: asset
+                };
+                if (isCss(asset)) {
+                    seg = asset.split(/\/+/);
                     if (/^\^?(\w+:|)$/.test(seg[0])) seg.shift();
                     seg.pop();
-                    seg.push(sid[0]);
-                    sid[0] = seg.join("_").replace(/:/, "-");
+                    seg.push(info.id);
+                    info.id = seg.join("_").replace(/:/, "-");
                 }
             }
         } else {
             seg = asset.getAttribute("src") || asset.getAttribute("href");
-            sid = [asset.getAttribute(elementIdData), uncachedAsset(seg || "")];
-            if (! sid[0] && sid[1]) sid = tagIdOf(sid[1]);
+            info = {id: asset.getAttribute(elementIdData), href: uncachedAsset(seg || "")};
+            asset = info.href;
+            if (! info.id && asset) info = tagInfoOf(asset);
         }
-        if (sid.length == 2) {
-            sid.push(isCss(sid[1]));
-            sid.push(sid[2] ? "link" : "script");
-            sid.push(/^\^/.test(sid[1]));
-            if (sid[4]) sid[1] = sid[1].substr(1);
+        if (! info.tn) {
+            info.css = isCss(asset);
+            info.tn = (info.css ? "link" : "script");
+            info.pre = /^\^/.test(asset);
+            if (info.pre) info.href = asset.substr(1);
         }
-        return sid;
+        return info;
     }
+
+    /**
+     * Checks if the asset is already imported to the current page.
+     *
+     * @method isLoaded
+     * @param {String} asset The URL of an asset.
+     * @return {Boolean}
+     * @private
+     */
     function isLoaded(asset) {
-        var sid = tagIdOf(asset), id = sid[0], href = sid[1], css = sid[2],
-            elements = document.getElementsByTagName(sid[3]),
+        var info = tagInfoOf(asset), id = info.id, href = info.href, css = info.css,
+            elements = document.getElementsByTagName(info.tn),
             i, len = elements.length, el;
         for (i = 0; i < len; ) {
             el = elements[i++];
-            if (tagIdOf(el)[0] === id) {
+            if (tagInfoOf(el).id === id) {
                 if (/\@/.test(asset) && css && el.getAttribute("href") != href) el.setAttribute("href", href);
                 return [css, el];
             }
         }
         return false;
     }
+
+    /**
+     * Bind the onLoad callback to script elements.
+     *
+     * @method bindLoadBehaviourTo
+     * @param {NodeElement} element The <script/> node
+     * @param {NodeElement} parent The parentNode of the <script/>
+     * @param {Function} completeCallback The callback to receive the state
+     *      message ("success" or "error")
+     * @param {Boolean} removeElement Flag to remove <script/> node from the
+     *      page even on success.
+     * @private
+     */
     function bindLoadBehaviourTo(element, parent, completeCallback, removeElement) {
         var done = false;
         element.onload = element.onreadystatechange = function () {
@@ -160,9 +278,27 @@
             }
         };
     }
+
+    /**
+     * Gets the <head/> element.
+     *
+     * @method getHead
+     * @return {NodeElement} The <head/> element.
+     */
     function getHead() {
         return document.getElementsByTagName("head")[0] || document.documentElement;
     }
+
+    /**
+     * Checks the CSS hierarchy order.
+     *
+     * @method cssOrder
+     * @param {NodeElement} element1 The <link/> element that should be achieved
+     *      first.
+     * @param {NodeElement} element2 The <link/> element that should be achieved
+     *      last.
+     * @return {Boolean}
+     */
     function cssOrder(element1, element2) {
         var i, links = document.getElementsByTagName("link"), len = links.length;
         for(i = 0; i < len; i++) {
@@ -170,6 +306,14 @@
             if (links[i] === element2) return false;
         }
     }
+
+    /**
+     * Inserts the <link/> element near other elements of the same kind.
+     *
+     * @method insertCss
+     * @param {NodeElement} element The <link/> element to be inserted.
+     * @param {NodeElement} lastCss The <link/> element ref.
+     */
     function insertCss(element, lastCss) {
         lastCss = lastCss || document.getElementsByTagName("link")[0];
         if (lastCss) {
@@ -178,6 +322,12 @@
             getHead().appendChild(element);
         }
     }
+
+    /**
+     * Processor constructor method
+     *
+     * @param {Function} func The queue processor function.
+     */
     function Processor(func) {
         extend(this, {queue: [], active: false, run: func});
     }
@@ -219,15 +369,15 @@
     // -- Context Methods ------------------------------------------------------
 
     function loadDependency(context, src, lastCss, completeCallback, removeElement) {
-        var head = getHead(), sid = tagIdOf(src), css = sid[2], element,
+        var head = getHead(), info = tagInfoOf(src), css = info.css, href = info.href, element,
             suffix = context.cfg.queryString;
-        element = document.createElement(sid[3]);
-        element.setAttribute(elementIdData, sid[0]);
+        element = document.createElement(info.tn);
+        element.setAttribute(elementIdData, info.id);
         if (css) element.setAttribute("rel", "stylesheet");
-        if (isFunction(suffix)) {suffix = suffix(sid[1]);}
-        element[css ? "href" : "src"] = sid[1] + (suffix ? "?" + suffix : "");
+        if (isFunction(suffix)) {suffix = suffix(href);}
+        element[css ? "href" : "src"] = href + (suffix ? "?" + suffix : "");
         if (css) {
-            if (sid[4]) {
+            if (info.pre) {
                 insertCss(element, lastCss);
             } else if (lastCss && lastCss.nextSibling) {
                 head.insertBefore(element, lastCss.nextSibling);
