@@ -7,10 +7,9 @@
  *
  * Date: Sun Apr 01 17:09:14 2012 -0300
  */
+
 (function (window, globalName, undefined) {
     "use strict";
-
-    // -- Private Variables ----------------------------------------------------
 
     var will, basicApi = {},
         elementIdData = "data-willjs-id",
@@ -20,7 +19,7 @@
         loadComponentLoaded = false,
         loadComponentMethodName = "loadComponent",
         document = window.document;
-
+				
     // -- Private Methods ------------------------------------------------------
 
     /**
@@ -34,7 +33,24 @@
         if (prepare) setup(this, false);
     }
     window[globalName] = will = new WillJS(globalName);
+	
+	(function(object){
+		object.__defineGetter__("__FILE__", function() {
+			var pattern	= /(^|[\/\\])will(.min)?\.js(\?|$)/,
+			scripts	= document.getElementsByTagName("script");
 
+			for (var i = 0; i < scripts.length; i++) {
+				if (pattern.test(scripts[i].src)) return scripts[i].src;		
+			}
+		});
+	})(window[globalName]);
+
+	(function(object){
+		object.__defineGetter__("__BASE_PATH__", function() {
+			return object.__FILE__.match(/(\D)+\//)[0];	
+		});
+	})(window[globalName]);
+	
     /**
      * Verify if a value is of type String
      *
