@@ -384,6 +384,19 @@
 
     // -- Context Methods ------------------------------------------------------
 
+    /**
+     * Includes the dependency into the page.
+     *
+     * @method loadDependency
+     * @param {WillJS} context WillJS object context
+     * @param {String} src The URL of asset to be loaded
+     * @param {NodeElement} lastCss Last <link/> element added to the page
+     * @param {Function} completeCallback The callback to receive the state
+     *      message ("success" or "error")
+     * @param {Boolean} removeElement Flag to remove <script/> node from the
+     *      page even on success.
+     * @private
+     */
     function loadDependency(context, src, lastCss, completeCallback, removeElement) {
         var head = getHead(), info = tagInfoOf(src), css = info.css, href = info.href, element,
             suffix = context.cfg.queryString;
@@ -406,6 +419,16 @@
             head.appendChild(element);
         }
     }
+
+    /**
+     * Default AJAX component loader (uses jQuery if no other wrapper has been setted).
+     *
+     * @method loadComponent_jQuery
+     * @param {WillJS} context WillJS object context
+     * @param {String} url The URL of JSON/JSONP component to load
+     * @param {Function} completeCallback The callback to receive the JSON
+     * @protected
+     */
     function loadComponent_jQuery(context, url, completeCallback) {
         var cache = (context.cfg.mode === will.modes.PROD),
             suffix = context.cfg.queryString,
@@ -436,6 +459,16 @@
             url: url
         });
     }
+
+    /**
+     * Prepare the WillJS instance with default configuration.
+     *
+     * @method setup
+     * @param {WillJS} context WillJS object context
+     * @param {Boolean} reset Flag to reset the configuration
+     * @param {Function} initConfig Preparing function.
+     * @private
+     */
     function setup(context, reset, initConfig) {
         if (reset || ! ("cfg" in context)) {
             extend(context, getConfig());
@@ -443,6 +476,16 @@
         }
         if (isFunction(initConfig)) initConfig(context.cfg);
     }
+
+    /**
+     * Gets or creates a component entry from the component registry.
+     *
+     * @method entryOf
+     * @param {Hash} registry The WillJS component registry
+     * @param {Path} path The component's path into the registry
+     * @return {Hash} An entry of a component
+     * @private
+     */
     function entryOf(registry, path) {
         var pn = path.packageName,
             dn = path.domainName,
@@ -451,6 +494,16 @@
             n = path.name;
         return p[n] || (p[n] = {rescue: function () {/*delete p[n];*/}});
     }
+
+    /**
+     * Involves the original component's function until all dependencies were loaded.
+     *
+     * @method implWrapper
+     * @param {WillJS} context WillJS object context
+     * @param {Hash} entry The entry of a component
+     * @param {Function,String} f The entry function to be involved
+     * @private
+     */
     function implWrapper(context, entry, f) {
         var impl = "impl", name = impl;
         if (isString(f)) {
@@ -458,32 +511,50 @@
             f = entry[name];
         }
         entry[name] = function () {
-            var args = arguments, assets = entry.assets || entry.libs;
+            var args = arguments, assets = entry.assets;
             if (assets && assets.length) {
                 process(context, "loadDependenciesAndCall", [context, entry, args]);
             } else {
-                entry[name] = (name == impl ? scopedFunction(context, f) : f);
-                return entry[name].apply(entry, args);
+                (entry[name] = (name == impl ? scopedFunction(context, f) : f)).apply(entry, args);
             }
         };
     }
-    function registerFunctions(context, registry, funcs, path) {
-        if (isntObject(funcs)) return;
+
+    /**
+     * Register components into registry.
+     *
+     * @method registerFunctions
+     * @param {WillJS} context WillJS object context
+     * @param {Hash} registry The WillJS component registry
+     * @param {Hash} comp The component loaded from URL
+     * @param {Path} path The component's path into the registry
+     * @private
+     */
+    function registerFunctions(context, registry, comp, path) {
+        if (isntObject(comp)) return;
         var entry,
-            f = funcs.impl || isFunction(funcs.getImpl) && funcs.getImpl(context),
-            l = funcs.assets || funcs.libs;
+            f = comp.impl || isFunction(comp.getImpl) && comp.getImpl(context),
+            l = comp.assets;
         if (isFunction(f)) {
             entry = entryOf(registry, path);
             entry.assets = isntObject(l) || !isArray(l) ? [] : l;
             implWrapper(context, entry, f);
-            entry.rescue = funcs.rescue || entry.rescue;
+            entry.rescue = comp.rescue || entry.rescue;
         } else {
-            for(f in funcs) {
+            for(f in comp) {
                 path.name = f;
-                registerFunctions(context, registry, funcs[f], path);
+                registerFunctions(context, registry, comp[f], path);
             }
         }
     }
+
+    /**
+     * Gets a path information from a component call.
+     *
+     * @param {WillJS} context WillJS object context
+     * @param {String} strPath The component call path
+     * @return {Hash} The component path information.
+     */
     function pathFor(context, strPath) {
         var cfg = context.cfg,
             d = cfg.domains,
@@ -689,7 +760,7 @@
         }),
         "loadDependenciesAndCall": new Processor(function (context, entry, args) {
             var self = this, debug = context.cfg.debug,
-                assets = entry.assets || entry.libs, asset, r, pre, el;
+                assets = entry.assets, asset, r, pre, el;
             if (assets.length) {
                 asset = assets[0];
                 pre = /^(?:[^@]+@)?\^/.test(asset);
