@@ -685,7 +685,7 @@
         },
         "addProcessor": function (processorName, func) {
             var r = this.cfg.processors, p = r[processorName];
-            if (!p) this.cfg.processors[processorName] = new Processor(func);
+            if (!p) r[processorName] = new Processor(func);
         },
         "process": function (processorName) {
             process(this, processorName, slice.call(arguments, 1));
