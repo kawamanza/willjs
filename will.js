@@ -551,6 +551,7 @@
     /**
      * Gets a path information from a component call.
      *
+     * @method pathFor
      * @param {WillJS} context WillJS object context
      * @param {String} strPath The component call path
      * @return {Hash} The component path information.
@@ -579,6 +580,17 @@
             }
         };
     }
+
+    /**
+     * Builds the URL for a component's path.
+     *
+     * @method urlFor
+     * @param {WillJS} context WillJS object context
+     * @param {Path} path The component's path into the registry
+     * @param {Integer} mode Dev mode or Prod mode
+     * @return {String} The URL for the resource
+     * @private
+     */
     function urlFor(context, path, mode) {
         var cfg = context.cfg,
             pn = path.packageName, n = path.name;
@@ -592,6 +604,16 @@
                     : pn + "/" + n)
             + "." + path.format;
     }
+
+    /**
+     * Queue up the arguments to be processed sequentialy.
+     *
+     * @method process
+     * @param {WillJS} context WillJS object context
+     * @param {String} handler The processor name from list of processors
+     * @param {Array} args The arguments to process with the processor
+     * @private
+     */
     function process(context, handler, args) {
         var r = context.cfg.processors,
             p = r[handler];
@@ -600,14 +622,36 @@
         }
         p.process(args);
     }
-    function stubsTo(context, funcPath) {
+
+    /**
+     * Gets a stub function for component call.
+     *
+     * @method stubsTo
+     * @param {WillJS} context WillJS object context
+     * @param {String} compPath The component call path
+     * @return {Function}
+     * @private
+     */
+    function stubsTo(context, compPath) {
         return function () {
             var registry = context.registry,
                 args = arguments,
-                path = pathFor(context, funcPath);
+                path = pathFor(context, compPath);
             process(context, "callComponent", [context, path, args]);
         };
     }
+
+    /**
+     * Loads a list of assets.
+     *
+     * @method requireAssets
+     * @param {WillJS} context WillJS object context
+     * @param {Array} assets A list of assets to load
+     * @param {Boolean} removeElement Flag to remove <script/> node from the
+     *      page even on success.
+     * @return {Function} A function to trigger the assets loading
+     * @private
+     */
     function requireAssets(context, assets, removeElement) {
         var entry = {assets: assets};
         return function (loadCallback) {
