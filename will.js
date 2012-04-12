@@ -250,6 +250,17 @@
     }
 
     /**
+     * Gets node elements from document.
+     *
+     * @method getElements
+     * @param {String} tagName The tag's name.
+     * @return {Collection} A collection of tags
+     */
+    function getElements(tagName) {
+        return document.getElementsByTagName(tagName);
+    }
+
+    /**
      * Checks if the asset is already imported to the current page.
      *
      * @method isLoaded
@@ -259,7 +270,7 @@
      */
     function isLoaded(asset) {
         var info = tagInfoOf(asset), id = info.id, href = info.href, css = info.css,
-            elements = document.getElementsByTagName(info.tn),
+            elements = getElements(info.tn),
             i, len = elements.length, el;
         for (i = 0; i < len; ) {
             el = elements[i++];
@@ -315,7 +326,7 @@
      * @return {NodeElement} The <head/> element.
      */
     function getHead() {
-        return document.getElementsByTagName("head")[0] || document.documentElement;
+        return getElements("head")[0] || document.documentElement;
     }
 
     /**
@@ -329,7 +340,7 @@
      * @return {Boolean}
      */
     function cssOrder(element1, element2) {
-        var i, links = document.getElementsByTagName("link"), len = links.length;
+        var i, links = getElements("link"), len = links.length;
         for(i = 0; i < len; i++) {
             if (links[i] === element1) return true;
             if (links[i] === element2) return false;
@@ -344,7 +355,7 @@
      * @param {NodeElement} lastCss The <link/> element ref.
      */
     function insertCss(element, lastCss) {
-        lastCss = lastCss || document.getElementsByTagName("link")[0];
+        lastCss = lastCss || getElements("link")[0];
         if (lastCss) {
             getHead().insertBefore(element, lastCss);
         } else {
