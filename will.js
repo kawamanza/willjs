@@ -127,7 +127,20 @@
         }
         key = keys.shift();
         if (keys.length == 0) {
-            root[key] = value;
+            if (isFunction(value) && /^(:*)(.+?)([=!])$/.test(key)) {
+                if (RegExp.$1) {
+                    root[key.substr(1)] = value;
+                } else {
+                    key = RegExp.$2;
+                    if (RegExp.$3 == "=") {
+                        root.__defineSetter__(key, value);
+                    } else {
+                        root.__defineGetter__(key, value);
+                    }
+                }
+            } else {
+                root[key] = value;
+            }
         } else {
             v = root[key];
             if (isntObject(v) || isArray(v)) {
