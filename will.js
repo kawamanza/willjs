@@ -712,7 +712,7 @@
                 for(i = 0, len = elements.length; i < len; i++) {
                     info = tagInfoOf(elements[i]);
                     if (info.id == "will") {
-                        cfg._dir = info.href.replace(/\/?[^\/]+$/, "/");
+                        cfg._dir = info.href.replace(/\/?[^\/]+$/, "/will/");
                         break;
                     }
                 }
