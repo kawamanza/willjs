@@ -638,10 +638,7 @@
      */
     function stubsTo(context, compPath) {
         return function () {
-            var registry = context.registry,
-                args = arguments,
-                path = pathFor(context, compPath);
-            process(context, "callComponent", [context, path, args]);
+            process(context, "callComponent", [context, pathFor(context, compPath), arguments]);
         };
     }
 
