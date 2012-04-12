@@ -19,7 +19,7 @@
         loadComponentLoaded = false,
         loadComponentMethodName = "loadComponent",
         document = window.document;
-				
+
     // -- Private Methods ------------------------------------------------------
 
     /**
@@ -33,24 +33,7 @@
         if (prepare) setup(this, false);
     }
     window[globalName] = will = new WillJS(globalName);
-	
-	(function(object){
-		object.__defineGetter__("__FILE__", function() {
-			var pattern	= /(^|[\/\\])will(.min)?\.js(\?|$)/,
-			scripts	= document.getElementsByTagName("script");
 
-			for (var i = 0; i < scripts.length; i++) {
-				if (pattern.test(scripts[i].src)) return scripts[i].src;		
-			}
-		});
-	})(window[globalName]);
-
-	(function(object){
-		object.__defineGetter__("__BASE_PATH__", function() {
-			return object.__FILE__.match(/(\D)+\//)[0];	
-		});
-	})(window[globalName]);
-	
     /**
      * Verify if a value is of type String
      *
@@ -727,6 +710,21 @@
         "reconfigure": function (initConfig) {
             setup(this, true, initConfig);
             return this;
+        },
+        ":root_dir!": function () {
+            var cfg = this.cfg, elements, len, i, info;
+            if (!cfg._dir) {
+                elements = getElements("script");
+                for(i = 0, len = elements.length; i < len; i++) {
+                    info = tagInfoOf(elements[i]);
+                    if (info.id == "will") {
+                        cfg._dir = info.href.replace(/\/?[^\/]+$/, "/");
+                        break;
+                    }
+                }
+                if (!cfg._dir) cfg._dir = "/javascripts/will/";
+            }
+            return cfg._dir;
         }
     });
     extend(WillJS.prototype, basicApi);
