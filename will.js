@@ -575,17 +575,14 @@
             domainName = RegExp.$1 || domainName;
         }
         if (!d[domainName]) domainName = "local"
-        return {
-            format: d[domainName][0],
-            domain: d[domainName][1],
-            mode: d[domainName][2],
+        return extend({
             domainName: domainName,
             packageName: packageName,
             name: name,
             toString: function() {
                 return domainName + ":" + packageName + "." + name;
             }
-        };
+        }, d[domainName]);
     }
 
     /**
@@ -603,7 +600,7 @@
             pn = path.packageName, n = path.name;
         if (mode == undefined) mode = path.mode;
         if (mode == undefined) mode = cfg.mode;
-        return path.domain
+        return (path.domain || context.root_dir)
             + (mode == will.modes.PROD
                 ? pn
                 : pn == cfg.defaultPackage
@@ -757,7 +754,7 @@
             cfg: extend(new Defaults(), {
                     "processors": new Processors(),
                     "domains": {
-                        "local": ["json", "/javascripts/will/"]
+                        "local": {format:"json"}
                     },
                     "packages": {}
                 })
@@ -769,8 +766,7 @@
         "mode": will.modes.DEV,
         "version": "1.2.2",
         "addDomain": function (domainName, urlPrefix, asJS, mode) {
-            this.domains[domainName] = [(isString(asJS) ? asJS : asJS ? "js" : "json"), urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/")];
-            if (mode != undefined) this.domains[domainName][2] = mode;
+            this.domains[domainName] = {format:(isString(asJS) ? asJS : asJS ? "js" : "json"), domain: urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/"), mode: mode};
         },
         "defaultPackage": "root",
         "registerPackage": function (packageName, functions) {
