@@ -218,7 +218,7 @@
                 }
             }
         } else {
-            seg = asset.getAttribute("src") || asset.getAttribute("href");
+            seg = asset.src || asset.href;
             info = {id: asset.getAttribute(elementIdData), href: uncachedAsset(seg || "")};
             asset = info.href;
             if (! info.id && asset) info = tagInfoOf(asset);
@@ -258,7 +258,7 @@
         for (i = 0; i < len; ) {
             el = elements[i++];
             if (tagInfoOf(el).id === id) {
-                if (/\@/.test(asset) && css && el.getAttribute("href") != href) el.setAttribute("href", href);
+                if (/\@/.test(asset) && css && el.href != href) el.href = href;
                 return [css, el];
             }
         }
