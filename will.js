@@ -574,7 +574,7 @@
             packageName = RegExp.$2 || cfg.packages[name] || packageName;
             domainName = RegExp.$1 || domainName;
         }
-        if (!d[domainName]) domainName = "local"
+        if (!d[domainName]) domainName = "local";
         return extend({
             domainName: domainName,
             packageName: packageName,
@@ -600,7 +600,7 @@
             pn = path.packageName, n = path.name;
         if (mode == undefined) mode = path.mode;
         if (mode == undefined) mode = cfg.mode;
-        return (path.domain || context.root_dir)
+        return (path.domain || context.defaultDomain)
             + (mode == will.modes.PROD
                 ? pn
                 : pn == cfg.defaultPackage
@@ -705,7 +705,14 @@
             setup(this, true, initConfig);
             return this;
         },
-        ":root_dir!": function () {
+        ":defaultDomain!": function () {
+            var self = this, cfg = self.cfg;
+            if (!cfg._dom) {
+                cfg._dom = self.rootDir.concat("components/");
+            }
+            return cfg._dom;
+        },
+        ":rootDir!": function () {
             var cfg = this.cfg, elements, len, i, info;
             if (!cfg._dir) {
                 elements = getElements("script");
