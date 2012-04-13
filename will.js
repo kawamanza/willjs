@@ -109,17 +109,18 @@
             keys = keys.split(/\./);
         }
         key = keys.shift();
+        if (key.charAt(0) == ":") {
+            keys.unshift(key.substr(1));
+            root[keys.join(".")] = value;
+            return;
+        }
         if (keys.length == 0) {
-            if (isFunction(value) && /^(:*)(.+?)([=!])$/.test(key)) {
-                if (RegExp.$1) {
-                    root[key.substr(1)] = value;
+            if (isFunction(value) && /^(.+?)([^\w])$/.test(key)) {
+                key = RegExp.$1;
+                if (RegExp.$2 == "=") {
+                    root.__defineSetter__(key, value);
                 } else {
-                    key = RegExp.$2;
-                    if (RegExp.$3 == "=") {
-                        root.__defineSetter__(key, value);
-                    } else {
-                        root.__defineGetter__(key, value);
-                    }
+                    root.__defineGetter__(key, value);
                 }
             } else {
                 root[key] = value;
