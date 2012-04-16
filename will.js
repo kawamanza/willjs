@@ -707,26 +707,26 @@
             return this;
         },
         ":defaultDomain!": function () {
-            var self = this, cfg = self.cfg;
-            if (!cfg._dom) {
-                cfg._dom = self.rootDir.concat("components/");
+            var self = this, cfg = self.cfg, dom = cfg._dom;
+            if (!dom) {
+                cfg._dom = dom = self.rootDir + "components/";
             }
-            return cfg._dom;
+            return dom;
         },
         ":rootDir!": function () {
-            var cfg = this.cfg, elements, len, i, info;
-            if (!cfg._dir) {
+            var cfg = this.cfg, dir = cfg._dir, elements, len, i, info;
+            if (!dir) {
                 elements = getElements("script");
                 for(i = 0, len = elements.length; i < len; i++) {
                     info = tagInfoOf(elements[i]);
                     if (info.id == "will") {
-                        cfg._dir = info.href.replace(/\/?[^\/]+$/, "/will/");
+                        dir = info.href.replace(/\/?[^\/]+$/, "/will/");
                         break;
                     }
                 }
-                if (!cfg._dir) cfg._dir = "/javascripts/will/";
+                cfg._dir = dir = (dir ? dir.replace(/\/will\/will\/$/, "/will/") : "/javascripts/will/");
             }
-            return cfg._dir;
+            return dir;
         }
     });
     extend(WillJS.prototype, basicApi);
