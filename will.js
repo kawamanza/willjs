@@ -639,7 +639,7 @@
      */
     function stubsTo(context, compPath) {
         return function () {
-            process(context, "callComponent", [context, pathFor(context, compPath), arguments]);
+            process(context, "callComponent", [context, compPath, arguments]);
         };
     }
 
@@ -699,12 +699,16 @@
             return window[name] || (window[name] = new WillJS(name, true));
         },
         "configure": function (initConfig) {
-            setup(this, false, initConfig);
-            return this;
+            var self = this;
+            self.configured = true;
+            setup(self, false, initConfig);
+            return self;
         },
         "reconfigure": function (initConfig) {
-            setup(this, true, initConfig);
-            return this;
+            var self = this;
+            self.configured = true;
+            setup(self, true, initConfig);
+            return self;
         },
         ":defaultDomain!": function () {
             var self = this, cfg = self.cfg, dom = cfg._dom;
@@ -785,9 +789,17 @@
 
     function Processors() {}
     extend(Processors.prototype, {
-        "callComponent": new Processor(function (context, path, args) {
+        "callComponent": new Processor(function (context, compPath, args) {
+            if (!context.configured) {
+                context.use(context.rootDir + "config.js")(function () {
+                    context.configured = true;
+                    process(context, "callComponent", [context, compPath, args]);
+                });
+                return;
+            }
             var self = this,
                 registry = context.registry,
+                path = pathFor(context, compPath),
                 url = urlFor(context, path),
                 entry = entryOf(registry, path),
                 impl = entry.impl;
