@@ -18,6 +18,7 @@
         toString = Object.prototype.toString,
         loadComponentLoaded = false,
         loadComponentMethodName = "loadComponent",
+        protocol = window.location.protocol,
         document = window.document;
 
     // -- Private Methods ------------------------------------------------------
@@ -230,6 +231,8 @@
             info.pre = /^\^/.test(asset);
             if (info.pre) info.href = asset.substr(1);
         }
+        asset = info.href;
+        if (/^\/\//.test(asset) && protocol != "https:") info.href = "http:" + asset;
         return info;
     }
 
