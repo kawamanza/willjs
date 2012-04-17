@@ -16,7 +16,6 @@
         SID_PATTERN = /^\^?([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.(?:css|js)$/,
         slice = Array.prototype.slice,
         toString = Object.prototype.toString,
-        loadComponentLoaded = false,
         loadComponentMethodName = "loadComponent",
         protocol = window.location.protocol,
         document = window.document;
@@ -432,43 +431,28 @@
     }
 
     /**
-     * Default AJAX component loader (uses jQuery if no other wrapper has been setted).
+     * A method missing plugin loader
      *
-     * @method loadComponent_jQuery
-     * @param {WillJS} context WillJS object context
-     * @param {String} url The URL of JSON/JSONP component to load
-     * @param {Function} completeCallback The callback to receive the JSON
-     * @protected
+     * @method missingMethod
+     * @param {String} methodName The attribute method to call
+     * @param {String} pluginFile The file basename into rootDir
+     * @param {WillJS} context WillJS object context (optional)
      */
-    function loadComponent_jQuery(context, url, completeCallback) {
-        var cache = (context.cfg.mode === will.modes.PROD),
-            suffix = context.cfg.queryString,
-            jsonp, done = false, debug = context.cfg.debug;
-        if ( jsonp = /\.jsonp$/.test(url) ) {
-            url = url.replace(/p$/, "");
-        }
-        if (isFunction(suffix)) {suffix = suffix(url);}
-        if (suffix) {
-            cache = true;
-            url = url + "?" + suffix;
-        }
-        window.jQuery.ajax({
-            dataType: jsonp ? "jsonp" : "html",
-            success: function (data) {
-                if (done) return;
+    function missingMethod(methodName, pluginFile, context) {
+        var self = this, done = false, args;
+        if (!context) context = will;
+        self[methodName] = function () {
+            if (done) return;
+            args = arguments;
+            context.use(
+                "willjsPlugin-" + methodName + "@" + context.rootDir + pluginFile
+            )(function (status) {
                 done = true;
-                if (debug) debug(" * successful loaded " + url);
-                completeCallback(200, data);
-            },
-            complete: function (xhr, status) {
-                if (done) return;
-                done = true;
-                if (debug) debug(" * completed " + url);
-                completeCallback(xhr.status, xhr.responseText);
-            },
-            cache: cache,
-            url: url
-        });
+                if (status === "success") {
+                    self[methodName].apply(self, args)
+                }
+            });
+        };
     }
 
     /**
@@ -696,6 +680,7 @@
             process(this, processorName, slice.call(arguments, 1));
         },
         "modes": {DEV:0, PROD:1},
+        "u.hit": missingMethod,
         "u.extend": extend,
         "as": function (name) {
             if (!name) return name;
@@ -740,23 +725,7 @@
 
     // -- Helper Methods -------------------------------------------------------
 
-    basicApi.u[loadComponentMethodName] = function (context, url, completeCallback) {
-        if (loadComponentLoaded) {
-            completeCallback(500, "");
-            return;
-        }
-        context.use(
-            "//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"
-        )(function (status) {
-            if (status === "success") {
-                basicApi.u[loadComponentMethodName] = loadComponent_jQuery;
-                loadComponent_jQuery(context, url, completeCallback);
-            } else {
-                loadComponentLoaded = true;
-                completeCallback(500, "");
-            }
-        });
-    };
+    basicApi.u.hit(loadComponentMethodName, "componentLoader.js");
 
     // -- Config Methods -------------------------------------------------------
 
