@@ -692,12 +692,6 @@
             setup(self, false, initConfig);
             return self;
         },
-        "reconfigure": function (initConfig) {
-            var self = this;
-            self.configured = true;
-            setup(self, true, initConfig);
-            return self;
-        },
         ":defaultDomain!": function () {
             var self = this, cfg = self.cfg, dom = cfg._dom;
             if (!dom) {
