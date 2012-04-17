@@ -438,21 +438,24 @@
      * @param {String} pluginFile The file basename into rootDir
      * @param {WillJS} context WillJS object context (optional)
      */
-    function missingMethod(methodName, pluginFile, context) {
-        var self = this, done = false, args;
+    function missingMethod(methodName, pluginFile, wrapper, context) {
+        var self = this, done = false, args, impl, func;
         if (!context) context = will;
-        self[methodName] = function () {
+        impl = function () {
             if (done) return;
             args = arguments;
             context.use(
-                "willjsPlugin-" + methodName + "@" + context.rootDir + pluginFile
+                "willjsPlugin-" + methodName + "@" + context.rootDir + func.pluginFile
             )(function (status) {
                 done = true;
                 if (status === "success") {
-                    self[methodName].apply(self, args)
+                    self[methodName].apply(self, args);
                 }
             });
         };
+        func = wrapper ? function () { impl.apply(undefined, arguments); } : impl;
+        func.pluginFile = pluginFile;
+        self[methodName] = func;
     }
 
     /**
