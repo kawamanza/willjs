@@ -616,21 +616,6 @@
     }
 
     /**
-     * Gets a stub function for component call.
-     *
-     * @method stubsTo
-     * @param {WillJS} context WillJS object context
-     * @param {String} compPath The component call path
-     * @return {Function}
-     * @private
-     */
-    function stubsTo(context, compPath) {
-        return function () {
-            process(context, "callComponent", [context, compPath, arguments]);
-        };
-    }
-
-    /**
      * Loads a list of assets.
      *
      * @method requireAssets
@@ -662,8 +647,11 @@
     // -- The Public API -------------------------------------------------------
 
     extend(basicApi, {
-        "call": function (selector) {
-            return stubsTo(this, selector);
+        "call": function (compPath) {
+            var context = this;
+            return function () {
+                process(context, "callComponent", [context, compPath, arguments]);
+            };
         },
         "use": function (assets) {
             return requireAssets(this, isArray(assets) ? assets : slice.call(arguments, 0), false);
