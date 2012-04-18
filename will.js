@@ -30,6 +30,7 @@
      */
     function WillJS(name, prepare) {
         this.name = name;
+        this.constructor = WillJS;
         if (prepare) setup(this, false);
     }
     window[globalName] = will = new WillJS(globalName);
@@ -439,21 +440,30 @@
      * @param {WillJS} context WillJS object context (optional)
      */
     function missingMethod(methodName, pluginFile, wrapper, context) {
-        var self = this, done = false, args, impl, func;
+        var self = this, done = false, args, args1, impl, func;
         if (!context) context = will;
-        impl = function () {
+        func = impl = function () {
             if (done) return;
+            self = this;
             args = arguments;
+            if (!wrapper) args1 = args;
             context.use(
                 "willjsPlugin-" + methodName + "@" + context.rootDir + func.pluginFile
             )(function (status) {
                 done = true;
                 if (status === "success") {
-                    self[methodName].apply(self, args);
+                    impl = self[methodName].apply(self, args1);
+                    if (wrapper) impl.apply(self, args);
                 }
             });
         };
-        func = wrapper ? function () { impl.apply(undefined, arguments); } : impl;
+        if (wrapper) {
+            func = function () {
+                args1 = arguments;
+                self = this;
+                return function () { impl.apply(self, arguments); };
+            };
+        }
         func.pluginFile = pluginFile;
         self[methodName] = func;
     }
@@ -470,7 +480,7 @@
     function setup(context, reset, initConfig) {
         if (reset || ! ("cfg" in context)) {
             extend(context, getConfig());
-            if (! ("call" in context)) extend(context, basicApi);
+            if (! ("use" in context)) extend(context, basicApi);
         }
         if (isFunction(initConfig)) initConfig(context.cfg);
     }
@@ -650,12 +660,6 @@
     // -- The Public API -------------------------------------------------------
 
     extend(basicApi, {
-        "call": function (compPath) {
-            var context = this;
-            return function () {
-                process(context, "callComponent", [context, compPath, arguments]);
-            };
-        },
         "use": function (assets) {
             return requireAssets(this, isArray(assets) ? assets : slice.call(arguments, 0), false);
         },
@@ -672,6 +676,7 @@
         },
         "modes": {DEV:0, PROD:1},
         "u.hit": missingMethod,
+        "u.process": process,
         "u.extend": extend,
         "as": function (name) {
             if (!name) return name;
@@ -711,6 +716,7 @@
     // -- Helper Methods -------------------------------------------------------
 
     basicApi.u.hit(loadComponentMethodName, "componentLoader.js");
+    missingMethod.call(WillJS.prototype, "call", "callComponent.js", true);
 
     // -- Config Methods -------------------------------------------------------
 
