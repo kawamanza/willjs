@@ -434,7 +434,7 @@
      *
      * @method missingMethod
      * @param {String} methodName The attribute method to call
-     * @param {String} pluginFile The file basename into rootDir
+     * @param {String} pluginFile The file basename into will.info.dir folder
      * @param {WillJS} context WillJS object context (optional)
      */
     function missingMethod(methodName, pluginFile, wrapper, context) {
@@ -449,7 +449,7 @@
                 pluginFile = func.pluginFile.replace(/\.js$/, ".min.js");
             }
             context.use(
-                "willjsPlugin-" + methodName + "@" + context.rootDir + pluginFile
+                "willjsPlugin-" + methodName + "@" + context.info.dir + pluginFile
             )(function (status) {
                 done = true;
                 if (status === "success") {
@@ -603,7 +603,7 @@
             pn = path.packageName, n = path.name;
         if (mode == undefined) mode = path.mode;
         if (mode == undefined) mode = cfg.mode;
-        return (path.domain || context.defaultDomain)
+        return (path.domain || context.info.dom)
             + (mode == will.modes.PROD
                 ? pn
                 : pn == cfg.defaultPackage
@@ -689,13 +689,6 @@
             setup(self, initConfig);
             return self;
         },
-        ":defaultDomain!": function () {
-            var self = this, cfg = self.cfg, dom = cfg._dom;
-            if (!dom) {
-                cfg._dom = dom = self.rootDir + "components/";
-            }
-            return dom;
-        },
         ":info!": function () {
             var context = this, info = context._info, elements, len, i,
                 tinfo, src;
@@ -707,17 +700,15 @@
                         src = tinfo.href;
                         context._info = info = {
                             href: src,
-                            dir: src.replace(/\/(?:will\/)*[^\/]+$/, "/will/"),
-                            min: /\.min\.js/.test(src)
+                            min: /\.min\.js/.test(src),
+                            dir: (src = src.replace(/\/(?:will\/)*[^\/]+$/, "/will/")),
+                            dom: src + "components/"
                         };
                         break;
                     }
                 }
             }
             return info;
-        },
-        ":rootDir!": function () {
-            return this.info.dir;
         }
     });
     extend(basicApi, "u", {
