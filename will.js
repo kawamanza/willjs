@@ -533,13 +533,14 @@
      *
      * @method registerFunctions
      * @param {WillJS} context WillJS object context
-     * @param {Hash} registry The WillJS component registry
      * @param {Hash} comp The component loaded from URL
      * @param {Path} path The component's path into the registry
      * @private
      */
-    function registerFunctions(context, registry, comp, path) {
+    function registerFunctions(context, comp, path) {
+        var registry = context.registry;
         if (isntObject(comp)) return;
+        if (isString(path)) path = pathFor(context, path);
         var entry,
             f = comp.impl || isFunction(comp.getImpl) && comp.getImpl(context),
             l = comp.assets;
@@ -551,7 +552,7 @@
         } else {
             for(f in comp) {
                 path.name = f;
-                registerFunctions(context, registry, comp[f], path);
+                registerFunctions(context, comp[f], path);
             }
         }
     }
@@ -657,6 +658,8 @@
         };
     }
 
+    function Processors() {}
+
     // -- The Public API -------------------------------------------------------
 
     extend(basicApi, {
@@ -665,7 +668,7 @@
         },
         "addComponent": function (selector, json) {
             var context = this;
-            return registerFunctions(context, context.registry, json, pathFor(context, selector));
+            registerFunctions(context, json, selector);
         },
         "addProcessor": function (processorName, func) {
             var r = this.cfg.processors, p = r[processorName];
@@ -675,9 +678,6 @@
             process(this, processorName, slice.call(arguments, 1));
         },
         "modes": {DEV:0, PROD:1},
-        "u.hit": missingMethod,
-        "u.process": process,
-        "u.extend": extend,
         "as": function (name) {
             if (!name) return name;
             return window[name] || (window[name] = new WillJS(name, true));
@@ -710,6 +710,18 @@
             }
             return dir;
         }
+    });
+    extend(basicApi, "u", {
+        hit: missingMethod,
+        Processors: Processors,
+        Processor: Processor,
+        process: process,
+        pathFor: pathFor,
+        urlFor: urlFor,
+        entryOf: entryOf,
+        requireAssets: requireAssets,
+        registerFunctions: registerFunctions,
+        extend: extend
     });
     extend(WillJS.prototype, basicApi);
 
@@ -750,57 +762,8 @@
         }
     });
 
-    function Processors() {}
-    extend(Processors.prototype, {
-        "callComponent": new Processor(function (context, compPath, args) {
-            if (!context.configured) {
-                context.use(context.rootDir + "config.js")(function () {
-                    context.configured = true;
-                    process(context, "callComponent", [context, compPath, args]);
-                });
-                return;
-            }
-            var self = this,
-                registry = context.registry,
-                path = pathFor(context, compPath),
-                url = urlFor(context, path),
-                entry = entryOf(registry, path),
-                impl = entry.impl;
-            if (impl) {
-                impl.apply(undefined, args);
-                return;
-            }
-            if (path.format == "js") {
-                url = path.toString().replace(/[:\.]/g, "_") + "@" + url;
-                requireAssets(context, [url], true)(function (status) {
-                    try {
-                        if (status == "success") {
-                            impl = entry.impl;
-                            if (impl) impl.apply(undefined, args);
-                        }
-                    } finally {
-                        self.sched();
-                    }
-                });
-            } else {
-                will.u[loadComponentMethodName](context, url, function (statusCode, data) {
-                    try {
-                        if (statusCode !== 200) {
-                            throw "could not load component: " + path;
-                        }
-                        if (isString(data)) data = eval("("+data+")");
-                        if (isntObject(data)) return;
-                        registerFunctions(context, registry, data, path);
-                        impl = entry.impl;
-                        if (impl) impl.apply(undefined, args);
-                    } finally {
-                        self.sched();
-                    }
-                });
-            }
-            return false;
-        }),
-        "loadDependenciesAndCall": new Processor(function (context, entry, args) {
+    Processors.prototype.loadDependenciesAndCall =
+        new Processor(function (context, entry, args) {
             var self = this, debug = context.cfg.debug,
                 assets = entry.assets, asset, r, pre, el;
             if (assets.length) {
@@ -844,8 +807,7 @@
             } else {
                 entry.impl.apply(undefined, args);
             }
-        })
-    });
+        });
 
     // -- Initial Setup --------------------------------------------------------
 
