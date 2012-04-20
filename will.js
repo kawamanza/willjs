@@ -28,12 +28,10 @@
      * @param {Boolean} prepare Run setup
      * @private
      */
-    function WillJS(name, prepare) {
+    function WillJS(name) {
         this.name = name;
         this.constructor = WillJS;
-        if (prepare) setup(this, false);
     }
-    window[globalName] = will = new WillJS(globalName);
 
     /**
      * Verify if a value is of type String
@@ -480,8 +478,8 @@
      * @param {Function} initConfig Preparing function.
      * @private
      */
-    function setup(context, reset, initConfig) {
-        if (reset || ! ("cfg" in context)) {
+    function setup(context, initConfig) {
+        if (! ("cfg" in context)) {
             extend(context, getConfig());
             if (! ("use" in context)) extend(context, basicApi);
         }
@@ -688,7 +686,7 @@
         "configure": function (initConfig) {
             var self = this;
             self.configured = true;
-            setup(self, false, initConfig);
+            setup(self, initConfig);
             return self;
         },
         ":defaultDomain!": function () {
@@ -736,11 +734,6 @@
     });
     extend(WillJS.prototype, basicApi);
 
-    // -- Helper Methods -------------------------------------------------------
-
-    basicApi.u.hit(loadComponentMethodName, "componentLoader.js");
-    missingMethod.call(WillJS.prototype, "call", "callComponent.js", true);
-
     // -- Config Methods -------------------------------------------------------
 
     function getConfig() {
@@ -758,7 +751,7 @@
 
     function Defaults() {}
     extend(Defaults.prototype, {
-        "mode": will.modes.DEV,
+        "mode": basicApi.modes.DEV,
         "version": "1.2.2",
         "addDomain": function (domainName, urlPrefix, asJS, mode) {
             this.domains[domainName] = {format:(isString(asJS) ? asJS : asJS ? "js" : "json"), domain: urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/"), mode: mode};
@@ -822,5 +815,12 @@
 
     // -- Initial Setup --------------------------------------------------------
 
-    setup(will, false);
+    window[globalName] = will = new WillJS(globalName);
+    setup(will);
+
+    // -- On-Demand Methods ----------------------------------------------------
+
+    basicApi.u.hit(loadComponentMethodName, "componentLoader.js");
+    missingMethod.call(WillJS.prototype, "call", "callComponent.js", true);
+
 })(window, "will", null);
