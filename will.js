@@ -447,8 +447,11 @@
             self = this;
             args = arguments;
             if (!wrapper) args1 = args;
+            if (func.pluginFile == pluginFile && context.info.min) {
+                pluginFile = func.pluginFile.replace(/\.js$/, ".min.js");
+            }
             context.use(
-                "willjsPlugin-" + methodName + "@" + context.rootDir + func.pluginFile
+                "willjsPlugin-" + methodName + "@" + context.rootDir + pluginFile
             )(function (status) {
                 done = true;
                 if (status === "success") {
@@ -695,20 +698,28 @@
             }
             return dom;
         },
-        ":rootDir!": function () {
-            var cfg = this.cfg, dir = cfg._dir, elements, len, i, info;
-            if (!dir) {
+        ":info!": function () {
+            var context = this, info = context._info, elements, len, i,
+                tinfo, src;
+            if (!info) {
                 elements = getElements("script");
                 for(i = 0, len = elements.length; i < len; i++) {
-                    info = tagInfoOf(elements[i]);
-                    if (info.id == "will") {
-                        dir = info.href.replace(/\/?[^\/]+$/, "/will/");
+                    tinfo = tagInfoOf(elements[i]);
+                    if (tinfo.id == "will") {
+                        src = tinfo.href;
+                        context._info = info = {
+                            href: src,
+                            dir: src.replace(/\/(?:will\/)*[^\/]+$/, "/will/"),
+                            min: /\.min\.js/.test(src)
+                        };
                         break;
                     }
                 }
-                cfg._dir = dir = (dir ? dir.replace(/\/will\/will\/$/, "/will/") : "/javascripts/will/");
             }
-            return dir;
+            return info;
+        },
+        ":rootDir!": function () {
+            return this.info.dir;
         }
     });
     extend(basicApi, "u", {
