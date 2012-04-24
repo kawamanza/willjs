@@ -14,6 +14,7 @@
     var will, basicApi = {},
         elementIdData = "data-willjs-id",
         SID_PATTERN = /^\^?([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.(?:css|js)$/,
+        QUERYSTRING_CAPTURE = /(\?[^#]*)/,
         slice = Array.prototype.slice,
         toString = Object.prototype.toString,
         loadComponentMethodName = "loadComponent",
@@ -197,8 +198,9 @@
      * @private
      */
     function tagInfoOf(asset) {
-        var info = undefined, seg;
+        var info = undefined, seg, href;
         if (isString(asset)) {
+            href = asset;
             asset = uncachedAsset(asset);
             if ( /^([\w\-\.]+)\@(.+)$/.test(asset) ) {
                 info = {id: RegExp.$1, href: RegExp.$2};
@@ -218,13 +220,14 @@
                 }
             }
         } else {
-            seg = asset.src || asset.href;
+            href = seg = asset.src || asset.href;
             info = {id: asset.getAttribute(elementIdData), href: uncachedAsset(seg || "")};
             asset = info.href;
-            if (! info.id && asset) info = tagInfoOf(asset);
+            if (! info.id && asset) info = tagInfoOf(href);
         }
         if (! info.tn) {
             info.css = isCss(asset);
+            info.qs = QUERYSTRING_CAPTURE.test(href) ? RegExp.$1 : "";
             info.tn = (info.css ? "link" : "script");
             info.pre = /^\^/.test(asset);
             if (info.pre) info.href = asset.substr(1);
@@ -408,10 +411,12 @@
      */
     function loadDependency(context, src, lastCss, completeCallback, removeElement) {
         var head = getHead(), info = tagInfoOf(src), css = info.css, href = info.href, element,
+            qs = info.qs,
             suffix = context.cfg.queryString;
         element = document.createElement(info.tn);
         element.setAttribute(elementIdData, info.id);
         if (css) element.setAttribute("rel", "stylesheet");
+        if (qs) {suffix = qs.substr(1);} else
         if (isFunction(suffix)) {suffix = suffix(href);}
         element[css ? "href" : "src"] = href + (suffix ? "?" + suffix : "");
         if (css) {
@@ -438,18 +443,19 @@
      * @param {WillJS} context WillJS object context (optional)
      */
     function missingMethod(methodName, pluginFile, wrapper, context) {
-        var self = this, done = false, args, args1, impl, func;
+        var self = this, done = false, args, args1, impl, func, info;
         if (!context) context = will;
         func = impl = function () {
             if (done) return;
+            info = context.info;
             self = this;
             args = arguments;
             if (!wrapper) args1 = args;
-            if (func.pluginFile == pluginFile && context.info.min) {
+            if (func.pluginFile == pluginFile && info.min) {
                 pluginFile = func.pluginFile.replace(/\.js$/, ".min.js");
             }
             context.use(
-                "willjsPlugin-" + methodName + "@" + context.info.dir + pluginFile
+                "willjsPlugin-" + methodName + "@" + info.dir + pluginFile + info.qs
             )(function (status) {
                 done = true;
                 if (status === "success") {
@@ -700,6 +706,7 @@
                         src = tinfo.href;
                         context._info = info = {
                             href: src,
+                            qs: tinfo.qs,
                             min: /\.min\.js/.test(src),
                             dir: (src = src.replace(/\/(?:will\/)*[^\/]+$/, "/will/")),
                             dom: src + "components/"

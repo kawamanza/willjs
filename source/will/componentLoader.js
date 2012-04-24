@@ -50,7 +50,7 @@
             return;
         }
         context.use(
-            "//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"
+            "//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js?"
         )(function (status) {
             if (status === "success") {
                 context.u.loadComponent = loadComponent_jQuery;

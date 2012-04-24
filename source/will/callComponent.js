@@ -12,7 +12,7 @@
 
     Processors.prototype.callComponent = new Processor(function (context, compPath, args) {
         if (!context.configured) {
-            context.use(context.info.dir + "config.js")(function () {
+            context.use(context.info.dir + "config.js" + context.info.qs)(function () {
                 context.configured = true;
                 process(context, "callComponent", [context, compPath, args]);
             });
