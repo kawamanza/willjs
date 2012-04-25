@@ -125,4 +125,77 @@ describe("WillJS API 'use' method loading CSSs", function () {
             );
         });
     }); // it should load CSSs using '^' and organize CSS hierarchy */
+
+    it("should force CSS order", function () {
+        var loadDone = false,
+            h = willjs.cfg.debug.history,
+            returnStatus = "initial";
+        runs(function () {
+            loadDone = false;
+            willjs.use(
+                "b.css",
+                "d.css"
+            )(function (status) {
+                returnStatus = status;
+                loadDone = true;
+            });
+        });
+        waitsFor(function () {
+            return loadDone;
+        }, "second CSS loading never completed", 200);
+        runs(function () {
+            expect(returnStatus).toBe("success");
+            expect(h.length).toBe(2);
+            expect(getWillJSElements("link")).toHaveSources(
+                "b.css",
+                "d.css"
+            );
+            loadDone = false;
+            willjs.use(
+                "a.css",
+                "c.css"
+            )(function (status) {
+                returnStatus = status;
+                loadDone = true;
+            });
+        });
+        waitsFor(function () {
+            return loadDone;
+        }, "second CSS loading never completed", 200);
+        runs(function () {
+            expect(returnStatus).toBe("success");
+            expect(h.length).toBe(4);
+            expect(getWillJSElements("link")).toHaveSources(
+                "a.css",
+                "c.css",
+                "b.css",
+                "d.css"
+            );
+            loadDone = false;
+            willjs.use(
+                "b.css",
+                "c.css",
+                "d.css",
+                "e.css"
+            )(function (status) {
+                returnStatus = status;
+                loadDone = true;
+            });
+        });
+        waitsFor(function () {
+            return loadDone;
+        }, "second CSS loading never completed", 200);
+        runs(function () {
+            expect(returnStatus).toBe("success");
+            expect(h.length).toBe(5);
+            expect(getWillJSElements("link")).toHaveSources(
+                "a.css",
+                "b.css",
+                "c.css",
+                "d.css",
+                "e.css"
+            );
+            loadDone = false;
+        });
+    });
 });
