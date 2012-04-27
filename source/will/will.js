@@ -1,11 +1,11 @@
 /*!
- * WillJS JavaScript Library v1.2.2
+ * WillJS JavaScript Library v1.3.0
  * http://github.com/kawamanza/will.js
  *
  * Copyright 2011-2012, Marcelo Manzan
  * Dual licensed under the MIT or GPL Version 2 licenses.
  *
- * Date: Sun Apr 01 17:09:14 2012 -0300
+ * Date: Fry Apr 27 00:16:08 2012 -0300
  */
 
 (function (window, globalName, undefined) {
@@ -760,7 +760,7 @@
     function Defaults() {}
     extend(Defaults.prototype, {
         "mode": basicApi.modes.DEV,
-        "version": "1.2.2",
+        "version": "1.3.0",
         "addDomain": function (domainName, urlPrefix, asJS, mode) {
             this.domains[domainName] = {format:(isString(asJS) ? asJS : asJS ? "js" : "json"), domain: urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/"), mode: mode};
         },
