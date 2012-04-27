@@ -775,7 +775,7 @@
 
     Processors.prototype.loadDependenciesAndCall =
         new Processor(function (context, entry, args) {
-            var self = this, debug = context.cfg.debug,
+            var self = this, debug = context.cfg.debug, css,
                 assets = entry.assets, asset, r, pre, el;
             if (assets.length) {
                 asset = assets[0];
@@ -783,15 +783,15 @@
                 if (r = isLoaded(asset)) {
                     assets.shift();
                     if (r[0]) {
-                        if (entry.lastCss) {
+                        if (css = entry.lastCss) {
                             el = entry.bottomCss.nextSibling;
-                            if (pre && cssOrder(entry.lastCss, r[1])) {
-                                insertCss(r[1], entry.lastCss);
+                            if (pre && cssOrder(css, r[1])) {
+                                insertCss(r[1], css);
                             } else if (el && cssOrder(r[1], entry.bottomCss)) {
                                 insertCss(r[1], el);
                             }
                         }
-                        if (!(entry.lastCss && pre)) entry.bottomCss = r[1];
+                        if (!(css && pre)) entry.bottomCss = r[1];
                         entry.lastCss = r[1];
                     }
                     entry.impl.apply(undefined, args);
