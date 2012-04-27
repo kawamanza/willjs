@@ -13,6 +13,8 @@
 
     var will, basicApi = {},
         elementIdData = "data-willjs-id",
+        success = "success",
+
         CSS_PATTERN = /\.css$/,
         JS_PATTERN = /\.js$/,
         SLASH_SPLIT_PATTERN = /\//,
@@ -25,9 +27,10 @@
         ASSET_SID_CAPTURE = /^([\w\-\.]+)\@(.+)$/,
         COMPONENT_PATH_CAPTURE = /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/,
         QUERYSTRING_CAPTURE = /(\?[^#]*)/,
+
         slice = Array.prototype.slice,
         toString = Object.prototype.toString,
-        loadComponentMethodName = "loadComponent",
+
         protocol = window.location.protocol,
         document = window.document;
 
@@ -298,7 +301,7 @@
             var rs = this.readyState;
             if (!done && (!rs || rs === "loaded" || rs === "complete")) {
                 done = true;
-                completeCallback("success");
+                completeCallback(success);
                 element.onload = element.onreadystatechange = undefined;
                 element.onerror = element.onabort = undefined;
                 if (removeElement && parent && element.parentNode) {
@@ -437,7 +440,7 @@
             } else {
                 insertCss(element);
             }
-            completeCallback("success", element);
+            completeCallback(success, element);
         } else {
             bindLoadBehaviourTo(element, head, completeCallback, removeElement);
             head.appendChild(element);
@@ -468,7 +471,7 @@
                 "willjsPlugin-" + methodName + "@" + info.dir + pluginFile + info.qs
             )(function (status) {
                 done = true;
-                if (status === "success") {
+                if (status === success) {
                     impl = self[methodName].apply(self, args1);
                     if (wrapper) impl.apply(self, args);
                 }
@@ -663,7 +666,7 @@
             if (entry.impl) return;
             var func, rescue;
             if (isFunction(loadCallback)) {
-                func = function () {loadCallback("success");};
+                func = function () {loadCallback(success);};
                 rescue = function () {loadCallback("error");};
             } else {
                 func = rescue = function () {};
@@ -795,22 +798,25 @@
                         if (!(css && pre)) entry.bottomCss = r[1];
                         entry.lastCss = r[1];
                     }
+                    while (assets.length && FALLBACK_ASSET_PATTERN.test(assets[0])) {
+                        assets.shift();
+                    }
                     entry.impl.apply(undefined, args);
                 } else {
                     if (debug) debug("** loading asset \"" + asset + "\"");
                     loadDependency(context, asset, entry[pre ? "lastCss" : "bottomCss"], function (status, css) {
                         try {
                             if (assets.length > 1 && FALLBACK_ASSET_PATTERN.test(assets[1])) {
-                                if (status === "success") {
+                                if (status === success) {
                                     do {
                                         assets.shift();
                                     } while (assets.length > 1 && FALLBACK_ASSET_PATTERN.test(assets[1]));
                                 } else {
                                     assets[1] = assets[1].replace(/\|/, "");
-                                    status = "success";
+                                    status = success;
                                 }
                             }
-                            if (status === "success") {
+                            if (status === success) {
                                 assets.shift();
                                 if (css) {
                                     if (!(entry.lastCss && pre)) entry.bottomCss = css;
@@ -838,7 +844,7 @@
 
     // -- On-Demand Methods ----------------------------------------------------
 
-    basicApi.u.hit(loadComponentMethodName, "componentLoader.js");
+    basicApi.u.hit("loadComponent", "componentLoader.js");
     missingMethod.call(WillJS.prototype, "call", "callComponent.js", true);
 
 })(window, "will", null);

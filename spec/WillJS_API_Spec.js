@@ -31,7 +31,7 @@ describe("WillJS API 'use' method loading JSs", function () {
         });
         waitsFor(function () {
             return loadDone;
-        }, "first CSS loading never completed", 200);
+        }, "first JS loading never completed", 200);
         runs(function () {
             expect(returnStatus).toBe("success");
             expect(h.length).toBe(2);
@@ -56,7 +56,7 @@ describe("WillJS API 'use' method loading JSs", function () {
         });
         waitsFor(function () {
             return loadDone;
-        }, "first CSS loading never completed", 200);
+        }, "first JS loading never completed", 200);
         runs(function () {
             expect(returnStatus).toBe("error");
             expect(h.length).toBe(1);
@@ -83,7 +83,7 @@ describe("WillJS API 'use' method loading JSs", function () {
         });
         waitsFor(function () {
             return loadDone;
-        }, "first CSS loading never completed", 200);
+        }, "first JS loading never completed", 200);
         runs(function () {
             expect(returnStatus).toBe("success");
             expect(h.length).toBe(3);
@@ -92,6 +92,21 @@ describe("WillJS API 'use' method loading JSs", function () {
             expect(h[2]).toMatch(/\/fixture2.js"$/);
             expect(willjs.fixture1).toBe(true);
             expect(willjs.fixture2).toBe(true);
+            loadDone = false;
+            willjs.use(
+                "/spec/fixture1.js",
+                "|/spec/fixture2.js",
+                "|/spec/test.js"
+            )(function (status) {
+                returnStatus = status;
+                loadDone = true;
+            });
+        });
+        waitsFor(function () {
+            return loadDone;
+        }, "first JS loading never completed", 200);
+        runs(function () {
+            expect(returnStatus).toBe("success");
         });
     });
 });
