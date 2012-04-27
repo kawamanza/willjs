@@ -20,6 +20,7 @@
         QUERYSTRING_ANCHOR_SPLIT_PATTERN = /[\?#]/,
         PROTOCOL_PATTERN = /^\^?(?:\w+:|)$/,
         PRE_INSERT_ASSET_PATTERN = /^(?:[^@]+@)?\^/,
+        FALLBACK_ASSET_PATTERN = /^(?:[^@]+@)?\|/,
         SID_PATTERN = /^\^?([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.(?:css|js)$/,
         ASSET_SID_CAPTURE = /^([\w\-\.]+)\@(.+)$/,
         COMPONENT_PATH_CAPTURE = /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/,
@@ -799,6 +800,16 @@
                     if (debug) debug("** loading asset \"" + asset + "\"");
                     loadDependency(context, asset, entry[pre ? "lastCss" : "bottomCss"], function (status, css) {
                         try {
+                            if (assets.length > 1 && FALLBACK_ASSET_PATTERN.test(assets[1])) {
+                                if (status === "success") {
+                                    do {
+                                        assets.shift();
+                                    } while (assets.length > 1 && FALLBACK_ASSET_PATTERN.test(assets[1]));
+                                } else {
+                                    assets[1] = assets[1].replace(/\|/, "");
+                                    status = "success";
+                                }
+                            }
                             if (status === "success") {
                                 assets.shift();
                                 if (css) {

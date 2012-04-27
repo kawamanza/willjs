@@ -15,6 +15,87 @@ describe("WillJS API 'call' method", function () {
     }); // it should load firstComponent component */
 });
 
+describe("WillJS API 'use' method loading JSs", function () {
+    it("should load all scripts", function () {
+        var loadDone = false,
+            h = willjs.cfg.debug.history,
+            returnStatus = "initial";
+        runs(function () {
+            willjs.use(
+                "/spec/fixture1.js",
+                "/spec/fixture2.js"
+            )(function (status) {
+                returnStatus = status;
+                loadDone = true;
+            });
+        });
+        waitsFor(function () {
+            return loadDone;
+        }, "first CSS loading never completed", 200);
+        runs(function () {
+            expect(returnStatus).toBe("success");
+            expect(h.length).toBe(2);
+            expect(h[0]).toMatch(/\/fixture1.js"$/);
+            expect(h[1]).toMatch(/\/fixture2.js"$/);
+            expect(willjs.fixture1).toBe(true);
+            expect(willjs.fixture2).toBe(true);
+        });
+    });
+    it("should fail when scripts are not found", function () {
+        var loadDone = false,
+            h = willjs.cfg.debug.history,
+            returnStatus = "initial";
+        runs(function () {
+            willjs.use(
+                "/spec/test.js",
+                "/spec/fixture1.js"
+            )(function (status) {
+                returnStatus = status;
+                loadDone = true;
+            });
+        });
+        waitsFor(function () {
+            return loadDone;
+        }, "first CSS loading never completed", 200);
+        runs(function () {
+            expect(returnStatus).toBe("error");
+            expect(h.length).toBe(1);
+            expect(h[0]).toMatch(/\/test.js"$/);
+        });
+    });
+    it("should load fallback scripts", function () {
+        var loadDone = false,
+            h = willjs.cfg.debug.history,
+            returnStatus = "initial";
+        runs(function () {
+            willjs.use(
+                "/spec/test.js",
+                "|/spec/fixture1.js",
+                "|/spec/test2.js",
+                "|/spec/test3.js",
+                "/spec/fixture2.js",
+                "|/spec/test5.js",
+                "|/spec/test4.js"
+            )(function (status) {
+                returnStatus = status;
+                loadDone = true;
+            });
+        });
+        waitsFor(function () {
+            return loadDone;
+        }, "first CSS loading never completed", 200);
+        runs(function () {
+            expect(returnStatus).toBe("success");
+            expect(h.length).toBe(3);
+            expect(h[0]).toMatch(/\/test.js"$/);
+            expect(h[1]).toMatch(/\/fixture1.js"$/);
+            expect(h[2]).toMatch(/\/fixture2.js"$/);
+            expect(willjs.fixture1).toBe(true);
+            expect(willjs.fixture2).toBe(true);
+        });
+    });
+});
+
 describe("WillJS API 'use' method loading CSSs", function () {
     it("should directly load CSSs and organize CSS hierarchy", function () {
         var loadDone = false,

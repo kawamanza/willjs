@@ -1,6 +1,6 @@
 (function (window, globalName) {
     "use strict";
-    var will, loadComponentLoaded = false;
+    var will, loadComponentLoaded = false, info;
     will = window[globalName];
 
     /**
@@ -49,8 +49,10 @@
             completeCallback(500, "");
             return;
         }
+        info = context.info;
         context.use(
-            "//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js?"
+            "//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js?",
+            "|" + info.dir.replace(/\/will\/$/, "/") + "jquery.min.js" + (info.qs || "?")
         )(function (status) {
             if (status === "success") {
                 context.u.loadComponent = loadComponent_jQuery;
