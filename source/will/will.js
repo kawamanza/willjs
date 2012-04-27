@@ -13,7 +13,16 @@
 
     var will, basicApi = {},
         elementIdData = "data-willjs-id",
+        CSS_PATTERN = /\.css$/,
+        JS_PATTERN = /\.js$/,
+        SLASH_SPLIT_PATTERN = /\//,
+        MULTI_SLASH_SPLIT_PATTERN = /\/+/,
+        QUERYSTRING_ANCHOR_SPLIT_PATTERN = /[\?#]/,
+        PROTOCOL_PATTERN = /^\^?(?:\w+:|)$/,
+        PRE_INSERT_ASSET_PATTERN = /^(?:[^@]+@)?\^/,
         SID_PATTERN = /^\^?([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.(?:css|js)$/,
+        ASSET_SID_CAPTURE = /^([\w\-\.]+)\@(.+)$/,
+        COMPONENT_PATH_CAPTURE = /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/,
         QUERYSTRING_CAPTURE = /(\?[^#]*)/,
         slice = Array.prototype.slice,
         toString = Object.prototype.toString,
@@ -91,7 +100,7 @@
      * @private
      */
     function isCss(href) {
-        return /\.css$/.test(href);
+        return CSS_PATTERN.test(href);
     }
 
     /**
@@ -185,7 +194,7 @@
      * @private
      */
     function uncachedAsset(asset) {
-        return asset.split(/[\?#]/)[0];
+        return asset.split(QUERYSTRING_ANCHOR_SPLIT_PATTERN)[0];
     }
 
     /**
@@ -202,18 +211,18 @@
         if (isString(asset)) {
             href = asset;
             asset = uncachedAsset(asset);
-            if ( /^([\w\-\.]+)\@(.+)$/.test(asset) ) {
+            if ( ASSET_SID_CAPTURE.test(asset) ) {
                 info = {id: RegExp.$1, href: RegExp.$2};
             } else {
-                seg = asset.split(/\//);
+                seg = asset.split(SLASH_SPLIT_PATTERN);
                 seg = seg[seg.length -1];
                 info = {
                     id: (SID_PATTERN.test(seg) ? RegExp.$1 : seg),
                     href: asset
                 };
                 if (isCss(asset)) {
-                    seg = asset.split(/\/+/);
-                    if (/^\^?(\w+:|)$/.test(seg[0])) seg.shift();
+                    seg = asset.split(MULTI_SLASH_SPLIT_PATTERN);
+                    if (PROTOCOL_PATTERN.test(seg[0])) seg.shift();
                     seg.pop();
                     seg.push(info.id);
                     info.id = seg.join("_").replace(/:/, "-");
@@ -452,7 +461,7 @@
             args = arguments;
             if (!wrapper) args1 = args;
             if (func.pluginFile == pluginFile && info.min) {
-                pluginFile = func.pluginFile.replace(/\.js$/, ".min.js");
+                pluginFile = func.pluginFile.replace(JS_PATTERN, ".min.js");
             }
             context.use(
                 "willjsPlugin-" + methodName + "@" + info.dir + pluginFile + info.qs
@@ -578,7 +587,7 @@
             domainName = "local",
             packageName = cfg.defaultPackage,
             name = strPath.toString();
-        if ( /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/.test(name) ){
+        if ( COMPONENT_PATH_CAPTURE.test(name) ){
             name = RegExp.$3;
             packageName = RegExp.$2 || cfg.packages[name] || packageName;
             domainName = RegExp.$1 || domainName;
@@ -770,7 +779,7 @@
                 assets = entry.assets, asset, r, pre, el;
             if (assets.length) {
                 asset = assets[0];
-                pre = /^(?:[^@]+@)?\^/.test(asset);
+                pre = PRE_INSERT_ASSET_PATTERN.test(asset);
                 if (r = isLoaded(asset)) {
                     assets.shift();
                     if (r[0]) {
