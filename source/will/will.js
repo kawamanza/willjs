@@ -17,16 +17,12 @@
 
         CSS_PATTERN = /\.css$/,
         JS_PATTERN = /\.js$/,
-        SLASH_SPLIT_PATTERN = /\//,
         MULTI_SLASH_SPLIT_PATTERN = /\/+/,
-        QUERYSTRING_ANCHOR_SPLIT_PATTERN = /[\?#]/,
         PROTOCOL_PATTERN = /^\^?(?:\w+:|)$/,
-        PRE_INSERT_ASSET_PATTERN = /^(?:[^@]+@)?\^/,
         FALLBACK_ASSET_PATTERN = /^(?:[^@]+@)?\|/,
-        SID_PATTERN = /^\^?([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\w+)?)*\.(?:css|js)$/,
-        ASSET_SID_CAPTURE = /^([\w\-\.]+)\@(.+)$/,
+        SID_PATTERN = /^([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\.?\w+)?)*\.(?:css|js)$/,
+        ASSET_CAPTURE = /^(?:([\w\-\.]+)\@)?([^#\?]+)(?:(\?[^#]*))?/,
         COMPONENT_PATH_CAPTURE = /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/,
-        QUERYSTRING_CAPTURE = /(\?[^#]*)/,
 
         slice = Array.prototype.slice,
         toString = Object.prototype.toString,
@@ -190,64 +186,69 @@
     }
 
     /**
-     * Removes the queryString and anchors of an asset URL.
+     * Creates a node element.
      *
-     * @method uncachedAsset
-     * @param {String} asset The URL of an asset.
-     * @return {String} The URL without any queryString or anchor suffixes
+     * @method newElement
+     * @param {String} name The tag name.
+     * @param {Hash} attrs The hash of attributes.
+     * @return {Element} A node element.
      * @private
      */
-    function uncachedAsset(asset) {
-        return asset.split(QUERYSTRING_ANCHOR_SPLIT_PATTERN)[0];
+    function newElement(name, attrs) {
+        var el = document.createElement(name), attr;
+        for (attr in attrs) {
+            if (attrs.hasOwnProperty(attr)) el.setAttribute(attr, attrs[attr]);
+        }
+        return el;
     }
 
     /**
-     * Gets an object information of an asset (id, href, isCss,
-     * tagName:"link|script", isPrepend).
+     * Asset constructor method.
      *
-     * @method tagInfoOf
-     * @param {String} asset The URL of an asset
-     * @return {Hash} An object information of the asset
-     * @private
+     * @param {String} asset The asset href/src.
+     * @param {String} dir The base directory for relative assets.
      */
-    function tagInfoOf(asset) {
-        var info = undefined, seg, href;
+    function Asset(asset, dir) {
+        var href, id, qs, pre, fixedId, css, seg, s;
         if (isString(asset)) {
-            href = asset;
-            asset = uncachedAsset(asset);
-            if ( ASSET_SID_CAPTURE.test(asset) ) {
-                info = {id: RegExp.$1, href: RegExp.$2};
-            } else {
-                seg = asset.split(SLASH_SPLIT_PATTERN);
-                seg = seg[seg.length -1];
-                info = {
-                    id: (SID_PATTERN.test(seg) ? RegExp.$1 : seg),
-                    href: asset
-                };
-                if (isCss(asset)) {
-                    seg = asset.split(MULTI_SLASH_SPLIT_PATTERN);
-                    if (PROTOCOL_PATTERN.test(seg[0])) seg.shift();
-                    seg.pop();
-                    seg.push(info.id);
-                    info.id = seg.join("_").replace(/:/, "-");
-                }
-            }
+            fixedId = /\@/.test(asset);
         } else {
-            href = seg = asset.src || asset.href;
-            info = {id: asset.getAttribute(elementIdData), href: uncachedAsset(seg || "")};
-            asset = info.href;
-            if (! info.id && asset) info = tagInfoOf(href);
+            href = asset.src || asset.href;
+            id = asset.getAttribute(elementIdData);
+            asset = (id ? id + "@" : "") + href;
         }
-        if (! info.tn) {
-            info.css = isCss(asset);
-            info.qs = QUERYSTRING_CAPTURE.test(href) ? RegExp.$1 : "";
-            info.tn = (info.css ? "link" : "script");
-            info.pre = /^\^/.test(asset);
-            if (info.pre) info.href = asset.substr(1);
+        if (ASSET_CAPTURE.test(asset)) {
+            id = RegExp.$1;
+            href = RegExp.$2;
+            qs = RegExp.$3;
+            if (pre = (href.charAt(0) == "^")) {
+                href = href.substr(1);
+            }
+            if (dir && href.charAt(0) == ".") {
+                href = newElement("script", {src: dir + href}).src;
+            }
+            if (/^\/\//.test(href) && protocol != "https:") href = "http:" + href;
         }
-        asset = info.href;
-        if (/^\/\//.test(asset) && protocol != "https:") info.href = "http:" + asset;
-        return info;
+        css = isCss(href);
+        if (! id) {
+            seg = href.split(MULTI_SLASH_SPLIT_PATTERN);
+            s = seg.pop();
+            id = SID_PATTERN.test(s) ? RegExp.$1 : s;
+            if (css) {
+                if (PROTOCOL_PATTERN.test(seg[0])) seg.shift();
+                seg.push(id);
+                id = seg.join("_").replace(/:/, "-");
+            }
+        }
+        extend(this, {
+            id: id,
+            fixedId: fixedId,
+            pre: pre,
+            css: css,
+            tn: (css ? "link" : "script"),
+            qs: qs || "",
+            href: href
+        });
     }
 
     /**
@@ -270,13 +271,16 @@
      * @private
      */
     function isLoaded(asset) {
-        var info = tagInfoOf(asset), id = info.id, href = info.href, css = info.css,
+        var info = asset, id = info.id, href = info.href, css = info.css,
             elements = getElements(info.tn),
-            i, len = elements.length, el;
+            i, len = elements.length, el, info2;
         for (i = 0; i < len; ) {
             el = elements[i++];
-            if (tagInfoOf(el).id === id) {
-                if (/\@/.test(asset) && css && el.href != href) el.href = href;
+            info2 = new Asset(el);
+            if (info2.id === id) {
+                if (info.fixedId && css && info2.href != href) {
+                    el.href = href + (info.qs || info2.qs);
+                }
                 return [css, el];
             }
         }
@@ -423,15 +427,16 @@
      * @private
      */
     function loadDependency(context, src, lastCss, completeCallback, removeElement) {
-        var head = getHead(), info = tagInfoOf(src), css = info.css, href = info.href, element,
+        var head = getHead(), info = src, css = info.css, href = info.href, element,
             qs = info.qs,
             suffix = context.cfg.queryString;
-        element = document.createElement(info.tn);
-        element.setAttribute(elementIdData, info.id);
-        if (css) element.setAttribute("rel", "stylesheet");
         if (qs) {suffix = qs.substr(1);} else
         if (isFunction(suffix)) {suffix = suffix(href);}
+        element = {};
+        element[elementIdData] = info.id;
+        if (css) element["rel"] = "stylesheet";
         element[css ? "href" : "src"] = href + (suffix ? "?" + suffix : "");
+        element = newElement(info.tn, element);
         if (css) {
             if (info.pre) {
                 insertCss(element, lastCss);
@@ -609,7 +614,7 @@
                 r = registry[dn] || (registry[dn] = {}),
                 p = r[pn] || (r[pn] = {}),
                 n = self.name;
-            return p[n] || (p[n] = {rescue: function () {/*delete p[n];*/}});
+            return p[n] || (p[n] = {rescue: function () {/*delete p[n];*/}, dir: self.dir});
         },
         toString: function () {
             var self = this;
@@ -700,7 +705,7 @@
             if (!info) {
                 elements = getElements("script");
                 for(i = 0, len = elements.length; i < len; i++) {
-                    tinfo = tagInfoOf(elements[i]);
+                    tinfo = new Asset(elements[i]);
                     if (tinfo.id == "will") {
                         src = tinfo.href;
                         context._info = info = {
@@ -764,10 +769,10 @@
     Processors.prototype.loadDependenciesAndCall =
         new Processor(function (context, entry, args) {
             var self = this, debug = context.cfg.debug, css,
-                assets = entry.assets, asset, r, pre, el;
+                assets = entry.assets, asset, r, pre, el, dir = entry.dir;
             if (assets.length) {
-                asset = assets[0];
-                pre = PRE_INSERT_ASSET_PATTERN.test(asset);
+                asset = new Asset(assets[0], dir);
+                pre = asset.pre;
                 if (r = isLoaded(asset)) {
                     assets.shift();
                     if (r[0]) {
@@ -787,7 +792,7 @@
                     }
                     entry.impl.apply(undefined, args);
                 } else {
-                    if (debug) debug("** loading asset \"" + asset + "\"");
+                    if (debug) debug("** loading asset \"" + asset.href + "\"");
                     loadDependency(context, asset, entry[pre ? "lastCss" : "bottomCss"], function (status, css) {
                         try {
                             if (assets.length > 1 && FALLBACK_ASSET_PATTERN.test(assets[1])) {

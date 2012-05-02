@@ -294,4 +294,76 @@ describe("WillJS API 'use' method loading CSSs", function () {
             loadDone = false;
         });
     });
+
+    it("should toggle CSSs", function () {
+        var loadDone = false, elements,
+            h = willjs.cfg.debug.history,
+            returnStatus = "initial";
+        runs(function () {
+            loadDone = false;
+            willjs.use(
+                "aaa@b.css?keepqs=true"
+            )(function (status) {
+                returnStatus = status;
+                loadDone = true;
+            });
+        });
+        waitsFor(function () {
+            return loadDone;
+        }, "second CSS loading never completed", 200);
+        runs(function () {
+            expect(returnStatus).toBe("success");
+            expect(h.length).toBe(1);
+            elements = getWillJSElements("link");
+            expect(elements[0].getAttribute("data-willjs-id")).toBe("aaa");
+            expect(elements).toHaveSources(
+                "b.css?keepqs=true"
+            );
+            loadDone = false;
+            willjs.use(
+                "aaa@c.css"
+            )(function (status) {
+                returnStatus = status;
+                loadDone = true;
+            });
+        });
+        waitsFor(function () {
+            return loadDone;
+        }, "second CSS loading never completed", 200);
+        runs(function () {
+            expect(returnStatus).toBe("success");
+            expect(h.length).toBe(1);
+            elements = getWillJSElements("link");
+            expect(elements[0].getAttribute("data-willjs-id")).toBe("aaa");
+            expect(elements).toHaveSources(
+                "c.css?keepqs=true"
+            );
+        });
+    });
+
+    it("should load CSS from component's directory", function () {
+        var loadDone = false, elements,
+            h = willjs.cfg.debug.history;
+        runs(function () {
+            loadDone = false;
+            willjs.addComponent("secondComponent", {
+                impl: function () {loadDone = true;},
+                rescue: function () {loadDone = true;},
+                assets: [
+                    "../../stylesheets/a.css",
+                    "./b.css"
+                ]
+            });
+            willjs.call("secondComponent")();
+        });
+        waitsFor(function () {
+            return loadDone;
+        }, "second CSS loading never completed", 200);
+        runs(function () {
+            expect(h.length).toBe(2);
+            elements = getWillJSElements("link");
+            expect(elements[0].href).toMatch(/\/stylesheets\/a.css\?/);
+            expect(elements[1].href).toMatch(/\/spec\/components\/b.css\?/);
+        });
+    });
 });
