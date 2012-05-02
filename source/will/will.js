@@ -506,24 +506,6 @@
     }
 
     /**
-     * Gets or creates a component entry from the component registry.
-     *
-     * @method entryOf
-     * @param {Hash} registry The WillJS component registry
-     * @param {Path} path The component's path into the registry
-     * @return {Hash} An entry of a component
-     * @private
-     */
-    function entryOf(registry, path) {
-        var pn = path.packageName,
-            dn = path.domainName,
-            r = registry[dn] || (registry[dn] = {}),
-            p = r[pn] || (r[pn] = {}),
-            n = path.name;
-        return p[n] || (p[n] = {rescue: function () {/*delete p[n];*/}});
-    }
-
-    /**
      * Involves the original component's function until all dependencies were loaded.
      *
      * @method implWrapper
@@ -558,14 +540,13 @@
      * @private
      */
     function registerFunctions(context, comp, path) {
-        var registry = context.registry;
         if (isntObject(comp)) return;
-        if (isString(path)) path = pathFor(context, path);
+        if (isString(path)) path = new Path(context, path);
         var entry,
             f = comp.impl || isFunction(comp.getImpl) && comp.getImpl(context),
             l = comp.assets;
         if (isFunction(f)) {
-            entry = entryOf(registry, path);
+            entry = path.entry;
             entry.assets = isntObject(l) || !isArray(l) ? [] : l;
             implWrapper(context, entry, f);
             entry.rescue = comp.rescue || entry.rescue;
@@ -580,56 +561,61 @@
     /**
      * Gets a path information from a component call.
      *
-     * @method pathFor
      * @param {WillJS} context WillJS object context
-     * @param {String} strPath The component call path
-     * @return {Hash} The component path information.
+     * @param {String} name The component call path
      */
-    function pathFor(context, strPath) {
+    function Path(context, name) {
         var cfg = context.cfg,
             d = cfg.domains,
-            domainName = "local",
-            packageName = cfg.defaultPackage,
-            name = strPath.toString();
-        if ( COMPONENT_PATH_CAPTURE.test(name) ){
+            modes = context.modes,
+            domainName, packageName;
+        if (COMPONENT_PATH_CAPTURE.test(name)) {
             name = RegExp.$3;
-            packageName = RegExp.$2 || cfg.packages[name] || packageName;
-            domainName = RegExp.$1 || domainName;
+            packageName = RegExp.$2 || cfg.packages[name] || cfg.defaultPackage;
+            domainName = RegExp.$1 || "local";
         }
-        if (!d[domainName]) domainName = "local";
-        return extend({
+        d = d[domainName] || d.local || {};
+        extend(this, {
             domainName: domainName,
             packageName: packageName,
             name: name,
-            toString: function() {
-                return domainName + ":" + packageName + "." + name;
-            }
-        }, d[domainName]);
+            base: d.domain,
+            format: d.format || "json",
+            prod: (d.mode || cfg.mode || modes.DEV) == modes.PROD,
+            ctx: context
+        });
     }
-
-    /**
-     * Builds the URL for a component's path.
-     *
-     * @method urlFor
-     * @param {WillJS} context WillJS object context
-     * @param {Path} path The component's path into the registry
-     * @param {Integer} mode Dev mode or Prod mode
-     * @return {String} The URL for the resource
-     * @private
-     */
-    function urlFor(context, path, mode) {
-        var cfg = context.cfg,
-            pn = path.packageName, n = path.name;
-        if (mode == undefined) mode = path.mode;
-        if (mode == undefined) mode = cfg.mode;
-        return (path.domain || context.info.dom)
-            + (mode == will.modes.PROD
-                ? pn
-                : pn == cfg.defaultPackage
-                    ? n
-                    : pn + "/" + n)
-            + "." + path.format;
-    }
+    extend(Path.prototype, {
+        "dir!": function () {
+            var self = this,
+                context = self.ctx,
+                pn = self.packageName;
+            return (self.base || context.info.dom)
+                + (self.prod || pn == context.cfg.defaultPackage
+                    ? ""
+                    : (pn + "/"));
+        },
+        "url!": function () {
+            var self = this;
+            return (self.dir
+                + (self.prod ? self.packageName : self.name)
+                + "." + self.format);
+        },
+        "entry!": function () {
+            var self = this,
+                registry = self.ctx.registry,
+                dn = self.domainName,
+                pn = self.packageName,
+                r = registry[dn] || (registry[dn] = {}),
+                p = r[pn] || (r[pn] = {}),
+                n = self.name;
+            return p[n] || (p[n] = {rescue: function () {/*delete p[n];*/}});
+        },
+        toString: function () {
+            var self = this;
+            return self.domainName + ":" + self.packageName + "." + self.name;
+        }
+    });
 
     /**
      * Queue up the arguments to be processed sequentialy.
@@ -697,7 +683,7 @@
         "process": function (processorName) {
             process(this, processorName, slice.call(arguments, 1));
         },
-        "modes": {DEV:0, PROD:1},
+        "modes": {DEV:2, PROD:1},
         "as": function (name) {
             if (!name) return name;
             return window[name] || (window[name] = new WillJS(name, true));
@@ -735,10 +721,8 @@
         hit: missingMethod,
         Processors: Processors,
         Processor: Processor,
+        Path: Path,
         process: process,
-        pathFor: pathFor,
-        urlFor: urlFor,
-        entryOf: entryOf,
         requireAssets: requireAssets,
         registerFunctions: registerFunctions,
         extend: extend

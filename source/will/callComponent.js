@@ -3,10 +3,8 @@
         u = will.u,
         Processors = u.Processors,
         Processor = u.Processor,
+        Path = u.Path,
         process = u.process,
-        pathFor = u.pathFor,
-        urlFor = u.urlFor,
-        entryOf = u.entryOf,
         requireAssets = u.requireAssets,
         registerFunctions = u.registerFunctions;
 
@@ -19,10 +17,9 @@
             return;
         }
         var self = this,
-            registry = context.registry,
-            path = pathFor(context, compPath),
-            url = urlFor(context, path),
-            entry = entryOf(registry, path),
+            path = new Path(context, compPath),
+            url = path.url,
+            entry = path.entry,
             impl = entry.impl;
         if (impl) {
             impl.apply(undefined, args);
