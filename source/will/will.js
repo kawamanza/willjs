@@ -92,18 +92,6 @@
     }
 
     /**
-     * Checks if an URL is of kind CSS
-     *
-     * @method isCss
-     * @param {String} href URL of an asset
-     * @return {Boolean}
-     * @private
-     */
-    function isCss(href) {
-        return CSS_PATTERN.test(href);
-    }
-
-    /**
      * Fetches nested keys on a root Hash and sets the value in the key deeper.
      *
      * @method fill
@@ -229,7 +217,7 @@
             }
             if (/^\/\//.test(href) && protocol != "https:") href = "http:" + href;
         }
-        css = isCss(href);
+        css = CSS_PATTERN.test(href);
         if (! id) {
             seg = href.split(MULTI_SLASH_SPLIT_PATTERN);
             s = seg.pop();
