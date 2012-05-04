@@ -742,7 +742,8 @@
         "mode": basicApi.modes.DEV,
         "version": "1.3.0",
         "addDomain": function (domainName, urlPrefix, asJS, mode) {
-            this.domains[domainName] = {format:(isString(asJS) ? asJS : asJS ? "js" : "json"), domain: urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/"), mode: mode};
+            if (urlPrefix) urlPrefix = urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/");
+            this.domains[domainName] = {format:(isString(asJS) ? asJS : asJS ? "js" : "json"), domain: urlPrefix, mode: mode};
         },
         "defaultPackage": "root",
         "registerPackage": function (packageName, functions) {
