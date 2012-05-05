@@ -52,7 +52,7 @@
         info = context.info;
         context.use(
             "//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js?",
-            "|" + info.dir.replace(/\/will\/$/, "/") + "jquery.min.js" + (info.qs || "?")
+            "|../jquery.min.js" + (info.qs || "?")
         )(function (status) {
             if (status === "success") {
                 context.u.loadComponent = loadComponent_jQuery;
@@ -61,6 +61,6 @@
                 loadComponentLoaded = true;
                 completeCallback(500, "");
             }
-        });
+        }, info.dir);
     };
 })(window, "will");

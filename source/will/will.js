@@ -641,7 +641,7 @@
      */
     function requireAssets(context, assets, removeElement) {
         var entry = {assets: assets};
-        return function (loadCallback) {
+        return function (loadCallback, dir) {
             if (entry.impl) return;
             var func, rescue;
             if (isFunction(loadCallback)) {
@@ -651,6 +651,7 @@
                 func = rescue = function () {};
             }
             implWrapper(context, entry, func);
+            entry.dir = dir;
             entry.rescue = rescue;
             entry.removeElement = removeElement;
             entry.impl();
