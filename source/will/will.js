@@ -8,7 +8,7 @@
  * Date: Fry Apr 27 00:16:08 2012 -0300
  */
 
-(function (window, globalName, undefined) {
+(function (window, globalName, undefined, jsId) {
     "use strict";
 
     var will, basicApi = {},
@@ -693,9 +693,10 @@
                 tinfo, src;
             if (!info) {
                 elements = getElements("script");
+                if (!jsId) jsId = "will";
                 for(i = 0, len = elements.length; i < len; i++) {
                     tinfo = new Asset(elements[i]);
-                    if (tinfo.id == "will") {
+                    if (tinfo.id == jsId) {
                         src = tinfo.href;
                         context._info = info = {
                             href: src,
