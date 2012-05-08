@@ -10,7 +10,7 @@ describe("WillJS API 'call' method", function () {
             expect(willjs.result).toBe("firstComponent executed with: testing with Jasmine");
             var h = willjs.cfg.debug.history;
             expect(h.length).toBe(2);
-            expect(h[h.length -1]).toBe(" * successful loaded /spec/components/firstComponent.json");
+            expect(h[h.length -1]).toMatch(/ \* successful loaded .*?\/spec\/components\/firstComponent\.json$/);
         });
     }); // it should load firstComponent component */
 });
@@ -22,12 +22,12 @@ describe("WillJS API 'use' method loading JSs", function () {
             returnStatus = "initial";
         runs(function () {
             willjs.use(
-                "/spec/fixture1.js",
-                "/spec/fixture2.js"
+                "../../spec/fixture1.js",
+                "../../spec/fixture2.js"
             )(function (status) {
                 returnStatus = status;
                 loadDone = true;
-            });
+            }, willjs.info.dir);
         });
         waitsFor(function () {
             return loadDone;
@@ -47,12 +47,12 @@ describe("WillJS API 'use' method loading JSs", function () {
             returnStatus = "initial";
         runs(function () {
             willjs.use(
-                "/spec/test.js",
-                "/spec/fixture1.js"
+                "../../spec/test.js",
+                "../../spec/fixture1.js"
             )(function (status) {
                 returnStatus = status;
                 loadDone = true;
-            });
+            }, willjs.info.dir);
         });
         waitsFor(function () {
             return loadDone;
@@ -69,17 +69,17 @@ describe("WillJS API 'use' method loading JSs", function () {
             returnStatus = "initial";
         runs(function () {
             willjs.use(
-                "/spec/test.js",
-                "|/spec/fixture1.js",
-                "|/spec/test2.js",
-                "|/spec/test3.js",
-                "/spec/fixture2.js",
-                "|/spec/test5.js",
-                "|/spec/test4.js"
+                "../../spec/test.js",
+                "|../../spec/fixture1.js",
+                "|../../spec/test2.js",
+                "|../../spec/test3.js",
+                "../../spec/fixture2.js",
+                "|../../spec/test5.js",
+                "|../../spec/test4.js"
             )(function (status) {
                 returnStatus = status;
                 loadDone = true;
-            });
+            }, willjs.info.dir);
         });
         waitsFor(function () {
             return loadDone;
@@ -94,13 +94,13 @@ describe("WillJS API 'use' method loading JSs", function () {
             expect(willjs.fixture2).toBe(true);
             loadDone = false;
             willjs.use(
-                "/spec/fixture1.js",
-                "|/spec/fixture2.js",
-                "|/spec/test.js"
+                "../../spec/fixture1.js",
+                "|../../spec/fixture2.js",
+                "|../../spec/test.js"
             )(function (status) {
                 returnStatus = status;
                 loadDone = true;
-            });
+            }, willjs.info.dir);
         });
         waitsFor(function () {
             return loadDone;

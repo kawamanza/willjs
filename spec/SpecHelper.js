@@ -20,7 +20,7 @@ function resetWillJS() {
     removeWillJSElements();
     if (window.willjs) delete window.willjs;
     window.will.as("willjs").configure(function (config) {
-        config.addDomain("local", "/spec/components");
+        config.addDomain("local", will.info.dir.replace(/\/source\/.*$/, "/spec/components"));
         config.queryString = function (url) {if (!/^\/\/ajax\.google/.test(url)) return specSuffix;};
         config.debug = function (msg) {
             config.debug.history.push(msg.replace(reSuffix, ""));
