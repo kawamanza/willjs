@@ -420,6 +420,10 @@
             suffix = context.cfg.queryString;
         if (qs) {suffix = qs.substr(1);} else
         if (isFunction(suffix)) {suffix = suffix(href);}
+        else if (!suffix) {
+            qs = context.info.qs;
+            suffix = (qs ? qs.substr(1) : "")
+        }
         element = {};
         element[elementIdData] = info.id;
         if (css) element["rel"] = "stylesheet";

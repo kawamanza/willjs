@@ -14,12 +14,16 @@
      */
     function loadComponent_jQuery(context, url, completeCallback) {
         var cache = (context.cfg.mode === will.modes.PROD),
-            suffix = context.cfg.queryString,
+            suffix = context.cfg.queryString, qs,
             jsonp, done = false, debug = context.cfg.debug;
         if ( jsonp = /\.jsonp$/.test(url) ) {
             url = url.replace(/p$/, "");
         }
         if (typeof suffix === "function") {suffix = suffix(url);}
+        else if (qs = context.info.qs) {
+            cache = true;
+            suffix = qs.substr(1);
+        }
         if (suffix) {
             cache = true;
             url = url + "?" + suffix;
