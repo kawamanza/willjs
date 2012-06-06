@@ -1,0 +1,1 @@
+fix for config.addDOmain() calls with empty urlPrefix param.
