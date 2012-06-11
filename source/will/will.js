@@ -1,6 +1,6 @@
 /*!
  * WillJS JavaScript Library v1.3.0
- * http://github.com/kawamanza/will.js
+ * http://github.com/kawamanza/will.js/
  *
  * Copyright 2011-2012, Marcelo Manzan
  * Dual licensed under the MIT or GPL Version 2 licenses.
@@ -684,7 +684,7 @@
         "modes": {DEV:2, PROD:1},
         "as": function (name) {
             if (!name) return name;
-            return window[name] || (window[name] = new WillJS(name, true));
+            return window[name] || (window[name] = new WillJS(name));
         },
         "configure": function (initConfig) {
             var self = this;
