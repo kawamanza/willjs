@@ -1,4 +1,4 @@
-/*! WillJS v1.4.0 componentLoader Plugin | github.com/kawamanza/will.js/ */
+/*! WillJS v1.4.0 componentLoader Plugin | github.com/kawamanza/willjs/ */
 (function (window, globalName) {
     "use strict";
     var will, loadComponentLoaded = false, info;

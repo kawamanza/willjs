@@ -1,6 +1,6 @@
 /*!
  * WillJS JavaScript Library v1.4.0
- * http://github.com/kawamanza/will.js/
+ * http://github.com/kawamanza/willjs/
  *
  * Copyright 2011-2012, Marcelo Manzan
  * Dual licensed under the MIT or GPL Version 2 licenses.

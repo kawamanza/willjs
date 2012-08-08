@@ -1,4 +1,4 @@
-# Will.js
+# WillJS
 
 A simple way to invoke on-demand behaviors into your website pages.
 
@@ -127,7 +127,7 @@ When grouping components inside a package, the JSON components file must be like
 }
 ```
 
-## Customized Will.js
+## Customized WillJS
 
 ```javascript
 will.as("myWill").configure(function (config) {
