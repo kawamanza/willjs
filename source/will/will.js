@@ -450,6 +450,8 @@
      * @method missingMethod
      * @param {String} methodName The attribute method to call
      * @param {String} pluginFile The file basename into will.info.dir folder
+     * @param {Boolean} wrapper Flag to indicate the method returns a function
+     *     stub.
      * @param {WillJS} context WillJS object context (optional)
      */
     function missingMethod(methodName, pluginFile, wrapper, context) {
@@ -490,7 +492,6 @@
      *
      * @method setup
      * @param {WillJS} context WillJS object context
-     * @param {Boolean} reset Flag to reset the configuration
      * @param {Function} initConfig Preparing function.
      * @private
      */
