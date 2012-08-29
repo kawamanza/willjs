@@ -31,16 +31,21 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <h3>Welcome to GitHub Pages.</h3>
+        <h3>Demo</h3>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<p>Consider the following page:</p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
+<div class="highlight"><pre><span class="cp">&lt;!DOCTYPE html&gt;</span>
+<span class="nt">&lt;html&gt;</span>
+<span class="nt">&lt;body&gt;</span>
+<span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">"javascript:will.call('popMessage')('Hello, this is a message on a dialog!');"</span><span class="nt">&gt;</span>
+   click here!<span class="nt">&lt;/a&gt;</span>
+<span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"javascripts/will/will.min.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
+<span class="nt">&lt;/body&gt;</span>
+<span class="nt">&lt;/html&gt;</span>
+</pre></div>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<p>Quite simple, right? There is nothing more than an external asset in this page (the will.min.js file). Note that the link element of this example has a weird calling, but still is possible to understand that a message will be displayed to the user by somewhere. Open the debugger of your browser to see what will happen. (after that, try it: <a>click here</a>)!</p>
 
 <h3>Designer Templates</h3>
 
