@@ -1,0 +1,2 @@
+The component's "getImpl" method is executed at first time
+ the component is called
