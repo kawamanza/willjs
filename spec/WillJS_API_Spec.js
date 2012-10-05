@@ -13,6 +13,40 @@ describe("WillJS API 'call' method", function () {
             expect(h[h.length -1]).toMatch(/ \* successful loaded .*?\/spec\/components\/firstComponent\.json$/);
         });
     }); // it should load firstComponent component */
+    it("should call 'getImpl' only when the first call occurs", function () {
+        runs(function () {
+            willjs.addComponent("myComponent",{
+                getImpl: function(willjs) {
+                    var entry = this;
+                    this.times = (this.times || 0) + 1;
+                    return function(value) {
+                        entry.result || (entry.result = [])
+                        entry.result.push(value);
+                        willjs.performed = true;
+                    }
+                }
+            });
+            expect(willjs.registry.local.root.myComponent.times).toBe(undefined);
+            expect(willjs.registry.local.root.myComponent.result).toBe(undefined);
+            willjs.call("myComponent")("value 1");
+        });
+        waitsFor(function () {
+            return ("performed" in willjs);
+        }, "component not invoked", 1000);
+        runs(function () {
+            expect(willjs.registry.local.root.myComponent.times).toBe(1);
+            expect(willjs.registry.local.root.myComponent.result[0]).toBe("value 1");
+            delete willjs.performed;
+            willjs.call("myComponent")("value 2");
+        });
+        waitsFor(function () {
+            return ("performed" in willjs);
+        }, "component not invoked", 1000);
+        runs(function () {
+            expect(willjs.registry.local.root.myComponent.times).toBe(1);
+            expect(willjs.registry.local.root.myComponent.result[1]).toBe("value 2");
+        });
+    }); // it should call 'getImpl' only when the first call occurs */
 });
 
 describe("WillJS API 'use' method loading JSs", function () {

@@ -520,6 +520,10 @@
         }
         entry[name] = function () {
             var args = arguments, assets = entry.assets;
+            if (entry.getImpl) {
+                f = entry.getImpl(context);
+                delete entry.getImpl;
+            }
             if (assets && assets.length) {
                 process(context, "loadDependenciesAndCall", [context, entry, args]);
             } else {
@@ -541,11 +545,12 @@
         if (isntObject(comp)) return;
         if (isString(path)) path = new Path(context, path);
         var entry,
-            f = comp.impl || isFunction(comp.getImpl) && comp.getImpl(context),
+            f = comp.impl,
             l = comp.assets;
-        if (isFunction(f)) {
+        if (isFunction(f || comp.getImpl)) {
             entry = path.entry;
             entry.assets = isntObject(l) || !isArray(l) ? [] : l;
+            entry.getImpl = comp.getImpl;
             implWrapper(context, entry, f);
             entry.rescue = comp.rescue || entry.rescue;
         } else {
