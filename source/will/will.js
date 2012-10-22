@@ -678,6 +678,9 @@
         },
         "addComponent": function (selector, json) {
             var context = this;
+            if (arguments.length == 1){
+                json = selector; selector = new Path(context, "unknown");
+            }
             registerFunctions(context, json, selector);
         },
         "addProcessor": function (processorName, func) {
