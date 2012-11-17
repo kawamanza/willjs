@@ -772,8 +772,17 @@
 
     Processors.prototype.loadDependenciesAndCall =
         new Processor(function (context, entry, args) {
-            var self = this, debug = context.cfg.debug, css,
-                assets = entry.assets, asset, r, pre, el, dir = entry.dir;
+            var self = this
+              , cfg = context.cfg
+              , debug = cfg.debug
+              , asset
+              , assets = entry.assets
+              , dir = entry.dir
+              , r
+              , css
+              , pre
+              , el
+            ;
             if (assets.length) {
                 asset = new Asset(assets[0], dir);
                 pre = asset.pre;
