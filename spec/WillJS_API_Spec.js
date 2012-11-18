@@ -143,6 +143,44 @@ describe("WillJS API 'use' method loading JSs", function () {
             expect(returnStatus).toBe("success");
         });
     });
+    it("should load assets by mapped dependencies", function () {
+        var loadDone = false
+          ,  h = willjs.cfg.debug.history
+          ,  returnStatus = "initial"
+        ;
+        runs(function () {
+            willjs.use("fixtures")(function (status) {
+                returnStatus = status;
+                loadDone = true;
+            }, willjs.info.dir);
+        });
+        waitsFor(function () {
+            return loadDone;
+        }, "loading never completed", 200);
+        runs(function () {
+            expect(returnStatus).toBe("error");
+            loadDone = false;
+            willjs.cfg.addAssetsList("fixtures",
+                "../../spec/fixture2.js",
+                "../../spec/fixture1.js"
+            );
+            willjs.use("fixtures")(function (status) {
+                returnStatus = status;
+                loadDone = true;
+            }, willjs.info.dir);
+        });
+        waitsFor(function () {
+            return loadDone;
+        }, "loading never completed", 200);
+        runs(function () {
+            expect(returnStatus).toBe("success");
+            expect(h.length).toBe(2);
+            expect(h[0]).toMatch(/\/fixture2.js"$/);
+            expect(h[1]).toMatch(/\/fixture1.js"$/);
+            expect(willjs.fixture1).toBe(true);
+            expect(willjs.fixture2).toBe(true);
+        });
+    });
 });
 
 describe("WillJS API 'use' method loading CSSs", function () {

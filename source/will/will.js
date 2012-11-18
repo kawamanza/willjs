@@ -22,6 +22,7 @@
         FALLBACK_ASSET_PATTERN = /^(?:[^@]+@)?\|/,
         SID_PATTERN = /^([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\.?\w+)?)*\.(?:css|js)$/,
         ASSET_CAPTURE = /^(?:([\w\-\.]+)\@)?([^#\?]+)(?:(\?[^#]*))?/,
+        ASSET_TERM = /^[\w\-]+$/,
         COMPONENT_PATH_CAPTURE = /^(?:(\w+):)?(?:(\w+)\.)?(\w+)$/,
 
         slice = Array.prototype.slice,
@@ -744,6 +745,7 @@
             registry: {},
             cfg: extend(new Defaults(), {
                     "processors": new Processors(),
+                    "assetsList": {},
                     "domains": {
                         "local": {format:"json"}
                     },
@@ -760,6 +762,9 @@
             if (urlPrefix) urlPrefix = urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/");
             this.domains[domainName] = {format:(isString(asJS) ? asJS : asJS ? "js" : "json"), domain: urlPrefix, mode: mode};
         },
+        "addAssetsList": function (term) {
+            this.assetsList[term] = slice.call(arguments, 1);
+        },
         "defaultPackage": "root",
         "registerPackage": function (packageName, functions) {
             var funcs = functions.split(/,/), p, len, i;
@@ -774,6 +779,7 @@
         new Processor(function (context, entry, args) {
             var self = this
               , cfg = context.cfg
+              , assetsList = cfg.assetsList
               , debug = cfg.debug
               , asset
               , assets = entry.assets
@@ -784,6 +790,16 @@
               , el
             ;
             if (assets.length) {
+                if (ASSET_TERM.test(asset = assets[0])) {
+                    if (isArray(asset = assetsList[asset])) {
+                        asset = asset.slice(0);
+                        asset.splice(0, 0, 0, 1);
+                        assets.splice.apply(assets, asset);
+                    } else {
+                        entry.rescue.apply(undefined, args);
+                        return;
+                    }
+                }
                 asset = new Asset(assets[0], dir);
                 pre = asset.pre;
                 if (r = isLoaded(asset)) {
