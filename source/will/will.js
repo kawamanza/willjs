@@ -763,6 +763,9 @@
             this.domains[domainName] = {format:(isString(asJS) ? asJS : asJS ? "js" : "json"), domain: urlPrefix, mode: mode};
         },
         "addAssetsList": function (term) {
+            if (! ASSET_TERM.test(term) ) {
+                throw new Error("invalid term: " + term);
+            }
             this.assetsList[term] = slice.call(arguments, 1);
         },
         "defaultPackage": "root",
