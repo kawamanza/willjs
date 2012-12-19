@@ -439,3 +439,52 @@ describe("WillJS API 'use' method loading CSSs", function () {
         });
     });
 });
+
+describe("WillJS Util 'extend' method", function () {
+    var extend = will.u.extend;
+    it("should copy attributes from another object", function () {
+        var obj = {a: 3, c: 3};
+        extend(obj, {a:1, b: 2});
+        expect(obj).toEqual({a: 1, b: 2, c: 3});
+    });
+    it("should not deep copy sub-objects", function () {
+        var obj = {b: {c: 3}}
+          , other = {b: 2, c: {d: 3}}
+        ;
+        extend(obj, other);
+        expect(obj).toEqual(other);
+        expect(obj.c).toBe(other.c);
+    });
+    it("should define namespaces for attributes", function () {
+        var obj = {a: 1, c: 3};
+        extend(obj, "m.p", {a:1, b: 2});
+        expect(obj).toEqual({a: 1, m: {p: {a: 1, b: 2}}, c: 3});
+        obj = {a: 1, c: 3};
+        extend(obj, {"b.m": 1, "b.n": 2});
+        expect(obj).toEqual({a: 1, b: {m: 1, n: 2}, c: 3});
+    });
+    it("should define getters", function () {
+        var obj = {a: 1}
+          , getter = function () {return 10;}
+        ;
+        extend(obj, {"b~": getter});
+        expect(obj).not.toEqual({a: 1});
+        expect(obj).not.toEqual({a: 1, b: getter});
+        expect(obj).not.toEqual({a: 1, "b~": getter});
+        expect(obj.b).toBe(10);
+        expect(obj.__lookupGetter__("b")).toBe(getter);
+    });
+    it("should define setters", function () {
+        var obj = {a: 1}
+          , setter = function (value) {this.v = value;}
+        ;
+        extend(obj, {"b=": setter});
+        expect(obj).toEqual({a: 1});
+        expect(obj.v).toBeUndefined();
+        obj.b = 10;
+        expect(obj).toEqual({a: 1, v: 10});
+        expect(obj.b).toBeUndefined();
+        expect(obj["b="]).toBeUndefined();
+        expect(obj.__lookupSetter__("b")).toBe(setter);
+    });
+});
