@@ -787,6 +787,7 @@
               , asset
               , assets = entry.assets
               , dir = entry.dir
+              , i, len
               , r
               , css
               , pre
@@ -795,6 +796,13 @@
             if (assets.length) {
                 if (ASSET_TERM.test(asset = assets[0])) {
                     if (isArray(asset = assetsList[asset])) {
+                        for (i = 0, len = asset.length; i < len; i++) {
+                            if (/\.css(?:[?#].*)?$/.test(asset[i])) {
+                                delete entry.bottomCss;
+                                delete entry.lastCss;
+                                break;
+                            }
+                        }
                         asset = asset.slice(0);
                         asset.splice(0, 0, 0, 1);
                         assets.splice.apply(assets, asset);
