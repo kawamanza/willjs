@@ -1,0 +1,2 @@
+Allowing dependency mapping with named lists
+  Sample: config.addAssetsList("jquery", "//ajax.googleapis.com/.../jquery.min.js", "|jquery.min.js");
