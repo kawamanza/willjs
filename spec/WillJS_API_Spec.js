@@ -455,10 +455,26 @@ describe("WillJS Util 'extend' method", function () {
         expect(obj).toEqual(other);
         expect(obj.c).toBe(other.c);
     });
+    it("should deep copy sub-objects", function () {
+        var obj = {a: {b: 1}, b: {c: 3}}
+          , other = {"a.": {d: 3}, b: 2}
+        ;
+        extend(obj, other);
+        expect(obj).toEqual({a: {b: 1, d: 3}, b: 2});
+    });
     it("should define namespaces for attributes", function () {
-        var obj = {a: 1, c: 3};
-        extend(obj, "m.p", {a:1, b: 2});
+        var obj, other = {a:1, b: 2};
+
+        obj = {a: 1, c: 3, m: {p: {c: 3}}};
+        extend(obj, "m.p", other);
         expect(obj).toEqual({a: 1, m: {p: {a: 1, b: 2}}, c: 3});
+        expect(obj.m.p).toBe(other);
+
+        obj = {a: 1, c: 3, m: {p: {c: 3}}};
+        extend(obj, "m.p.", other);
+        expect(obj).toEqual({a: 1, m: {p: {a: 1, b: 2, c: 3}}, c: 3});
+        expect(obj.m.p).not.toBe(other);
+
         obj = {a: 1, c: 3};
         extend(obj, {"b.m": 1, "b.n": 2});
         expect(obj).toEqual({a: 1, b: {m: 1, n: 2}, c: 3});
