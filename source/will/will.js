@@ -92,44 +92,34 @@
         return typeof value === "function";
     }
 
-    /**
-     * Fetches nested keys on a root Hash and sets the value in the key deeper.
-     *
-     * @method fill
-     * @param {Hash} root Object to be filled
-     * @param {String,Array} keys Nested subkeys to be fetched
-     * @param {Object} value The value
-     * @private
-     */
-    function fill(root, keys, value) {
-        var key, v;
-        if (isString(keys)) {
-            keys = keys.split(/\./);
-        }
-        key = keys.shift();
-        if (key.charAt(0) == ":") {
-            keys.unshift(key.substr(1));
-            root[keys.join(".")] = value;
-            return;
-        }
-        if (keys.length == 0) {
-            if (isFunction(value) && /^(.+?)([^\w])$/.test(key)) {
-                key = RegExp.$1;
-                if (RegExp.$2 == "=") {
-                    root.__defineSetter__(key, value);
+    function copyTo(target, source) {
+        var keys, prop, original, other, value;
+        for (prop in source) {
+            if (source.hasOwnProperty(prop)) {
+                value = source[prop];
+                if (prop.charAt(0) == ":") {
+                    target[prop.substr(1)] = value;
+                } else if ((keys = prop.split(/\./)).length > 1) {
+                    prop = keys.shift();
+                    original = target[prop];
+                    if (isntObject(original) || isArray(original)) {
+                        original = target[prop] = {};
+                    }
+                    prop = keys.join(".");
+                    other = value;
+                    if (prop) (other = {})[prop] = value;
+                    copyTo(original, other);
+                } else if (isFunction(value) && /\W$/.test(prop)) {
+                    prop = RegExp['$`'];
+                    if (RegExp['$&'] == '=') {
+                        target.__defineSetter__(prop, value);
+                    } else {
+                        target.__defineGetter__(prop, value);
+                    }
                 } else {
-                    root.__defineGetter__(key, value);
+                    target[prop] = value;
                 }
-            } else {
-                root[key] = value;
             }
-        } else {
-            v = root[key];
-            if (isntObject(v) || isArray(v)) {
-                v = {};
-                root[key] = v;
-            }
-            fill(v, keys, value);
         }
     }
 
@@ -140,25 +130,21 @@
      * @return {Hash} The extended hash.
      * @protected
      */
-    function extend(self, hash, other) {
-        var key = "", k, len = arguments.length;
-        if (len < 3) {
-            other = hash;
-            hash = self;
-            self = this;
+    function extend(target) {
+        var source, other, ctx
+          , i = 1, args = arguments, len = args.length
+        ;
+        for ( ; i < len; i++) {
+            source = args[i];
+            if ( isString(source) ) {
+                ctx = source;
+            } else if (source) {
+                other = source;
+                if (ctx) (other = {})[ctx] = source;
+                copyTo(target, other);
+            }
         }
-        if (isString(hash)) {
-            key = hash + ".";
-            hash = other;
-        }
-        else if (len == 2) {
-            self = hash;
-            hash = other;
-        }
-        for (k in hash) {
-            if (hash.hasOwnProperty(k)) fill(self, key + k, hash[k]);
-        }
-        return self;
+        return target;
     }
 
     /**
