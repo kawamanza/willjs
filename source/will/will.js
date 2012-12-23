@@ -784,8 +784,10 @@
                     if (isArray(asset = assetsList[asset])) {
                         for (i = 0, len = asset.length; i < len; i++) {
                             if (/\.css(?:[?#].*)?$/.test(asset[i])) {
-                                delete entry.bottomCss;
-                                delete entry.lastCss;
+                                if (/\^/.test(asset[i])) {
+                                    delete entry.bottomCss;
+                                    delete entry.lastCss;
+                                }
                                 break;
                             }
                         }
