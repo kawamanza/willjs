@@ -1,4 +1,4 @@
-/*! WillJS v1.5.0 callComponent Plugin | github.com/kawamanza/willjs/ */
+/*! WillJS v1.6.0 callComponent Plugin | github.com/kawamanza/willjs/ */
 (function (window, globalName) {
     var will = window[globalName],
         u = will.u,
