@@ -56,7 +56,7 @@
         }
         info = context.info;
         context.use(
-            "//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js?",
+            "jquery",
             "|../jquery.min.js" + (info.qs || "?")
         )(function (status) {
             if (status === "success") {

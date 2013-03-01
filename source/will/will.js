@@ -731,7 +731,9 @@
             registry: {},
             cfg: extend(new Defaults(), {
                     "processors": new Processors(),
-                    "assetsList": {},
+                    "assetsList": {
+                        "jquery": ["//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js?"]
+                    },
                     "domains": {
                         "local": {format:"json"}
                     },
