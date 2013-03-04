@@ -1,5 +1,5 @@
 {
-    getImpl: function () {
+    getResponder: function () {
         var i = 0;
         return function () {
             $("<p>called "+(++i)+" times</p>").appendTo("body");

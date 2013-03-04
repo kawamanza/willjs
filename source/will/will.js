@@ -507,6 +507,10 @@
         }
         entry[name] = function () {
             var args = arguments, assets = entry.assets;
+            if (entry.getResponder) {
+                f = entry.getResponder(context);
+                delete entry.getResponder;
+            } else
             if (entry.getImpl) {
                 f = entry.getImpl(context);
                 delete entry.getImpl;
@@ -534,10 +538,10 @@
         var entry,
             f = comp.impl,
             l = comp.assets;
-        if (isFunction(f || comp.getImpl)) {
+        if (isFunction(f || comp.getImpl || comp.getResponder)) {
             entry = path.entry;
             entry.assets = isntObject(l) || !isArray(l) ? [] : l;
-            entry.getImpl = comp.getImpl;
+            entry.getResponder = comp.getResponder || comp.getImpl;
             implWrapper(context, entry, f);
             entry.rescue = comp.rescue || entry.rescue;
         } else {

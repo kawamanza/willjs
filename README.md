@@ -38,8 +38,7 @@ The components are automatically loaded by AJAX and stored on Will's registry.
 ```javascript
 // {host}/javascripts/will/doSomething.json
 {
-    // impl: function () {/* the component, or... */}, // optional
-    getImpl: function (will) {
+    getResponder: function (will) {
         // do something before return the component
         return function (param1, param2) {
             var will = this;
@@ -61,8 +60,7 @@ If you prefere to load components as script, you need to perform the instruction
 
 ```javascript
 will.addComponent("doSomething", {
-    // impl: function () {/* the component, or... */}, // optional
-    getImpl: function (will) {
+    getResponder: function (will) {
         // do something before return the component
         return function (param1, param2) {
             var will = this;
@@ -108,8 +106,7 @@ When grouping components inside a package, the JSON components file must be like
 // {host}/javascripts/will/root.json
 {
     doSomething: {
-        // impl: function () {/* the component, or... */}, // optional
-        getImpl: function (will) {
+        getResponder: function (will) {
             // do something before return the component
             return function (param1, param2) {
                 var will = this;
