@@ -1,3 +1,52 @@
+describe("WillJS API 'define' method", function () {
+    it("should register component in registry.local.root", function () {
+        expect(willjs.registry.local).toBe(undefined);
+        willjs.define("comp1", ["a.css"], function() {
+            this.loaded = true;
+            return function () {
+                this.performed = true;
+            };
+        });
+        expect(willjs.registry.local.root.comp1).not.toBe(undefined);
+        expect(willjs.registry.local.root.comp1.assets).toEqual(["a.css"]);
+        expect(willjs.registry.local.root.comp1.loaded).toEqual(undefined);
+        willjs.call("comp1")();
+        waitsFor(function () {
+            return willjs.hasOwnProperty("performed");
+        }, "component not loaded", 1000);
+        runs(function () {
+            expect(willjs.registry.local.root.comp1.loaded).toEqual(true);
+            expect(willjs.registry.local.root.comp1.assets).toEqual([]);
+        });
+    });
+});
+
+describe("WillJS API 'addComponent' method", function () {
+    it("should register component in registry.local.root", function () {
+        expect(willjs.registry.local).toBe(undefined);
+        willjs.addComponent("comp1", {
+            assets: ["a.css"],
+            getResponder: function() {
+                this.loaded = true;
+                return function () {
+                    this.performed = true;
+                };
+            }
+        });
+        expect(willjs.registry.local.root.comp1).not.toBe(undefined);
+        expect(willjs.registry.local.root.comp1.assets).toEqual(["a.css"]);
+        expect(willjs.registry.local.root.comp1.loaded).toEqual(undefined);
+        willjs.call("comp1")();
+        waitsFor(function () {
+            return willjs.hasOwnProperty("performed");
+        }, "component not loaded", 1000);
+        runs(function () {
+            expect(willjs.registry.local.root.comp1.loaded).toEqual(true);
+            expect(willjs.registry.local.root.comp1.assets).toEqual([]);
+        });
+    });
+});
+
 describe("WillJS API 'call' method", function () {
     it("should load firstComponent component", function () {
         runs(function () {

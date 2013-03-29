@@ -674,6 +674,13 @@
             }
             registerFunctions(context, json, selector);
         },
+        "define": function (componentPath, deps, factory) {
+            if (isFunction(deps)) {
+                factory = deps;
+                deps = [];
+            }
+            this.addComponent(componentPath, {assets: deps, getResponder: factory});
+        },
         "addProcessor": function (processorName, func) {
             var r = this.cfg.processors, p = r[processorName];
             if (!p) r[processorName] = new Processor(func);
