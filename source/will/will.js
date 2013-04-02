@@ -746,7 +746,7 @@
                         "jquery": ["//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js?"]
                     },
                     "domains": {
-                        "local": {format:"json"}
+                        "local": {format:"js"}
                     },
                     "packages": {}
                 })
