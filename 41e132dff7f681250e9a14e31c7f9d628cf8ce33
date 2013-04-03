@@ -1,0 +1,2 @@
+Configuration to translate dependency location.
+ Example: config.translateAssetTo("application.js", "jquery,handlebars,underscore");
