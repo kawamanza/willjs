@@ -18,7 +18,7 @@
         CSS_PATTERN = /\.css$/,
         JS_PATTERN = /\.js$/,
         MULTI_SLASH_SPLIT_PATTERN = /\/+/,
-        PROTOCOL_PATTERN = /^\^?(?:\w+:|)$/,
+        PROTOCOL_PATTERN = /^[\^\+]?(?:\w+:|)$/,
         FALLBACK_ASSET_PATTERN = /^(?:[^@]+@)?\|/,
         SID_PATTERN = /^([\w\-\.]+?)(?:\.min|\-\d+(?:\.\d+)*(?:\.?\w+)?)*\.(?:css|js)$/,
         ASSET_CAPTURE = /^(?:([\w\-\.]+)\@)?([^#\?]+)(?:(\?[^#]*))?/,
@@ -184,7 +184,9 @@
      * @param {String} dir The base directory for relative assets.
      */
     function Asset(asset, dir) {
-        var href, id, qs, pre, fixedId, css, seg, s;
+        var href, id, qs, fixedId, css, seg, s
+          , pre, pos
+        ;
         if (isString(asset)) {
             fixedId = /\@/.test(asset);
         } else {
@@ -196,7 +198,10 @@
             id = RegExp.$1;
             href = RegExp.$2;
             qs = RegExp.$3;
-            if (pre = (href.charAt(0) == "^")) {
+            s = href.charAt(0);
+            pre = (s == "^");
+            pos = (s == "+");
+            if (pre || pos) {
                 href = href.substr(1);
             }
             if (dir && href.charAt(0) == ".") {
@@ -219,6 +224,7 @@
             id: id,
             fixedId: fixedId,
             pre: pre,
+            pos: pos,
             css: css,
             tn: (css ? "link" : "script"),
             qs: qs || "",
@@ -807,6 +813,7 @@
               , r
               , css
               , pre
+              , pos
               , el
             ;
             if (assets.length) {
@@ -831,6 +838,7 @@
                 }
                 asset = new Asset(assets[0], dir);
                 pre = asset.pre;
+                pos = asset.pos;
                 if (r = isLoaded(asset)) {
                     assets.shift();
                     if (r[0]) {
@@ -857,6 +865,12 @@
                         return;
                     } else {
                         if (debug) debug("** loading asset \"" + asset.href + "\"");
+                    }
+                    if (pos) {
+                        r = getElements(asset.tn);
+                        if ( (len = r.length) != 0 ) {
+                            entry.lastCss = entry.bottomCss = r[len - 1];
+                        }
                     }
                     loadDependency(context, asset, entry[pre ? "lastCss" : "bottomCss"], function (status, css) {
                         try {

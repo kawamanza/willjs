@@ -382,6 +382,61 @@ describe("WillJS API 'use' method loading CSSs", function () {
         });
     }); // it should load CSSs using '^' and organize CSS hierarchy */
 
+    it("should load CSSs using '+' and organize CSS hierarchy", function () {
+        var loadDone = false,
+            h = willjs.cfg.debug.history,
+            returnStatus = "initial";
+        runs(function () {
+            willjs.use(
+                "+g.css",
+                "j.css"
+            )(function (status) {
+                returnStatus = status;
+                loadDone = true;
+            });
+        });
+        waitsFor(function () {
+            return loadDone;
+        }, "first CSS loading never completed", 200);
+        runs(function () {
+            expect(returnStatus).toBe("success");
+            expect(h.length).toBe(2);
+            expect(getWillJSElements("link")).toHaveSources(
+                "g.css",
+                "j.css"
+            );
+        });
+        // normalize CSS order (h -> i -> j -> k)
+        runs(function () {
+            loadDone = false;
+            willjs.use(
+                "f.css",
+                "g.css",
+                "i.css",
+                "^h.css",
+                "+k.css"    // more relevant (insert after last <link /> tag - j.css)
+            )(function (status) {
+                returnStatus = status;
+                loadDone = true;
+            });
+        });
+        waitsFor(function () {
+            return loadDone;
+        }, "second CSS loading never completed", 200);
+        runs(function () {
+            expect(returnStatus).toBe("success");
+            expect(h.length).toBe(6);
+            expect(getWillJSElements("link")).toHaveSources(
+                "f.css",
+                "g.css",
+                "h.css",
+                "i.css",
+                "j.css",
+                "k.css"
+            );
+        });
+    }); // it should load CSSs using '+' and organize CSS hierarchy */
+
     it("should force CSS order", function () {
         var loadDone = false,
             h = willjs.cfg.debug.history,
