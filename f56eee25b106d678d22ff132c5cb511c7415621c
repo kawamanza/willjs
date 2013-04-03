@@ -1,1 +1,5 @@
 Now you can use AMD-style to define components
+ Example:
+   will.define("compName", ["deps.css", "deps.js"], function factory() {
+       return function responder() {};
+   });
