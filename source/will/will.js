@@ -745,6 +745,7 @@
                     "assetsList": {
                         "jquery": ["//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js?"]
                     },
+                    "assetsTargetList": {js: {}, css: {}},
                     "domains": {
                         "local": {format:"js"}
                     },
@@ -767,6 +768,21 @@
             }
             this.assetsList[term] = slice.call(arguments, 1);
         },
+        "translateAssetTo": function (assetsTarget, assets) {
+            if (isString(assets)) assets = assets.split(",");
+            if (! isArray(assetsTarget) ) assetsTarget = [assetsTarget];
+            var assetsTargetList = this.assetsTargetList
+              , i = 0, len = assets.length
+              , source
+            ;
+            assetsTargetList = assetsTargetList[/\.css/.test(assetsTarget[0]) ? "css" : "js"];
+            for ( ; i < len; ) {
+                source = assets[i++];
+                if (assetsTarget.indexOf(source) == -1) {
+                    assetsTargetList[source] = assetsTarget;
+                }
+            }
+        },
         "defaultPackage": "root",
         "registerPackage": function (packageName, functions) {
             var funcs = functions.split(/,/), p, len, i;
@@ -782,6 +798,7 @@
             var self = this
               , cfg = context.cfg
               , assetsList = cfg.assetsList
+              , assetsTargetList = cfg.assetsTargetList
               , debug = cfg.debug
               , asset
               , assets = entry.assets
@@ -833,7 +850,14 @@
                     }
                     entry.impl.apply(undefined, args);
                 } else {
-                    if (debug) debug("** loading asset \"" + asset.href + "\"");
+                    if (r = assetsTargetList[asset.css ? "css" : "js"][asset.id]) {
+                        if (debug) debug("** skipping asset \"" + asset.href + "\"");
+                        assets.splice.apply(assets, [0, 1].concat(r));
+                        entry.impl.apply(undefined, args);
+                        return;
+                    } else {
+                        if (debug) debug("** loading asset \"" + asset.href + "\"");
+                    }
                     loadDependency(context, asset, entry[pre ? "lastCss" : "bottomCss"], function (status, css) {
                         try {
                             if (assets.length > 1 && FALLBACK_ASSET_PATTERN.test(assets[1])) {

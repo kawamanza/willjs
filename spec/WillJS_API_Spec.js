@@ -230,6 +230,45 @@ describe("WillJS API 'use' method loading JSs", function () {
             expect(willjs.fixture2).toBe(true);
         });
     });
+    it("should load assets by mapped target", function () {
+        var loadDone = false
+          ,  h = willjs.cfg.debug.history
+          ,  returnStatus = "initial"
+        ;
+        runs(function () {
+            willjs.use("../../spec/fixture1.js")(function (status) {
+                returnStatus = status;
+                loadDone = true;
+            }, willjs.info.dir);
+        });
+        waitsFor(function () {
+            return loadDone;
+        }, "loading never completed", 200);
+        runs(function () {
+            expect(returnStatus).toBe("success");
+            loadDone = false;
+            resetWillJS();
+            h = willjs.cfg.debug.history;
+            willjs.cfg.translateAssetTo("../../spec/fixture2.js"
+              , "fixture1"
+            );
+            willjs.use("../../spec/fixture1.js")(function (status) {
+                returnStatus = status;
+                loadDone = true;
+            }, willjs.info.dir);
+        });
+        waitsFor(function () {
+            return loadDone;
+        }, "loading never completed", 200);
+        runs(function () {
+            expect(returnStatus).toBe("success");
+            expect(h.length).toBe(2);
+            expect(h[0]).toMatch(/skipping.*?\/fixture1.js"$/);
+            expect(h[1]).toMatch(/loading.*?\/fixture2.js"$/);
+            expect(willjs.fixture1).toBeUndefined();
+            expect(willjs.fixture2).toBe(true);
+        });
+    });
 });
 
 describe("WillJS API 'use' method loading CSSs", function () {
