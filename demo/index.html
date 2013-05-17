@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>WillJS - Demo Page</title>
+
+  <link rel="stylesheet" href="css/base.css" />
+  <script src="js/will/will.js"></script>
+</head>
+
+<body>
+<h4>jQuery-UI Slider Demo</h4>
+<div class="tv">
+<form name="alerta" onsubmit="jqSlider('#slider'); return false;">
+  <div id="slider"></div>
+  <br />
+  <input type="submit" class="btn btn-primary" value=" go! ">
+  <code>will.call("<a href="js/will/components/jqueryui/slider.js">jqueryui.slider</a>")("#slider");</code>
+</form>
+</div>
+<h4>Twitter Bootstrap + popMessage Demo</h4>
+<div class="tv">
+<form name="alerta" onsubmit="popMessage(this.mensagem.value); return false;">
+  <input type="text" size="60" name="mensagem" value="Teste de alerta com popMessage"/>
+  <br />
+  <input type="submit" class="btn btn-primary" value=" popMessage! ">
+  <code>will.call("<a href="js/will/components/popMessage.js">popMessage</a>")(input.value);</code>
+</form>
+</div>
+<script>
+window.popMessage = will.call('popMessage');
+window.jqSlider = will.call('jqueryui.slider');
+</script>
+</body>
+</html>
