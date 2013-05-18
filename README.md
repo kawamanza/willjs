@@ -15,7 +15,7 @@ See the [demo page](http://kawamanza.github.io/willjs/demo/).
 
 ### Site structure
 
-```bash
+```
 www-root/
  +- css/
  |  +- base.css
@@ -31,7 +31,7 @@ www-root/
  |     |  |  `- slider.js
  |     |  +- modal.js
  |     |  `- popMessage.js
- |     +- config.js
+ |     +- [config.js](http://kawamanza.github.io/willjs/demo/js/will/config.js)
  |     `- will.min.js
  `- index.html
 ```
