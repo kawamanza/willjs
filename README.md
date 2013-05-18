@@ -31,10 +31,12 @@ www-root/
  |     |  |  `- slider.js
  |     |  +- modal.js
  |     |  `- popMessage.js
- |     +- [config.js](http://kawamanza.github.io/willjs/demo/js/will/config.js)
+ |     +- config.js [1]
  |     `- will.min.js
  `- index.html
 ```
+
+1. [www-root/js/will/config.js](http://kawamanza.github.io/willjs/demo/js/will/config.js)
 
 ## Configuration
 
