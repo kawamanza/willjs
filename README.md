@@ -13,6 +13,29 @@ will.use("/jquery.js", "/jquery-ui.js")();             // loads required assets 
 
 See the [demo page](http://kawamanza.github.io/willjs/demo/).
 
+### Site structure
+
+```bash
+www-root/
+ +- css/
+ |  +- base.css
+ |  `- bootstrap.min.css
+ +- js/
+ |  +- libs/
+ |  |  +- bootstrap.min.css
+ |  |  +- handlebars.js
+ |  |  `- jquery-1.8.1.min.js
+ |  `- will/
+ |     +- components/
+ |     |  +- jqueryui/
+ |     |  |  `- slider.js
+ |     |  +- modal.js
+ |     |  `- popMessage.js
+ |     +- config.js
+ |     `- will.min.js
+ `- index.html
+```
+
 ## Configuration
 
 ```javascript
