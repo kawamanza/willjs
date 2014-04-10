@@ -109,12 +109,21 @@
                     other = value;
                     if (prop) (other = {})[prop] = value;
                     copyTo(original, other);
-                } else if (isFunction(value) && /\W$/.test(prop)) {
+                } else if (/\W$/.test(prop)) {
                     prop = RegExp['$`'];
                     if (RegExp['$&'] == '=') {
                         target.__defineSetter__(prop, value);
                     } else {
-                        target.__defineGetter__(prop, value);
+                        if (isFunction(value)) {
+                            target.__defineGetter__(prop, value);
+                        } else {
+                            Object.defineProperty(target, prop, copyTo({
+                                get: function (){},
+                                set: function (){},
+                                enumerable: true,
+                                configurable: true
+                            }, value));
+                        }
                     }
                 } else {
                     target[prop] = value;
