@@ -1,0 +1,2 @@
+Support to old versions of browsers that do not support
+ methods __defineGetter__ and __defineSetters__
