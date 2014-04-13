@@ -1,5 +1,5 @@
 /*!
- * WillJS JavaScript Library v1.6.0
+ * WillJS JavaScript Library v1.7.0
  * http://github.com/kawamanza/willjs/
  *
  * Copyright 2011-2012, Marcelo Manzan
@@ -109,13 +109,24 @@
                     other = value;
                     if (prop) (other = {})[prop] = value;
                     copyTo(original, other);
-                } else if (isFunction(value) && /\W$/.test(prop)) {
+                } else if (/\W$/.test(prop)) {
                     prop = RegExp['$`'];
-                    if (RegExp['$&'] == '=') {
-                        target.__defineSetter__(prop, value);
+                    other = {
+                        get: function (){},
+                        set: function (){},
+                        enumerable: true,
+                        configurable: true
+                    };
+                    if (isFunction(value)) {
+                        if (RegExp['$&'] == '=') {
+                            other.set = value;
+                        } else {
+                            other.get = value;
+                        }
                     } else {
-                        target.__defineGetter__(prop, value);
+                        copyTo(other, value);
                     }
+                    Object.defineProperty(target, prop, other);
                 } else {
                     target[prop] = value;
                 }
@@ -763,7 +774,7 @@
     function Defaults() {}
     extend(Defaults.prototype, {
         "mode": basicApi.modes.DEV,
-        "version": "1.6.0",
+        "version": "1.7.0",
         "addDomain": function (domainName, urlPrefix, asJS, mode) {
             if (urlPrefix) urlPrefix = urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/");
             this.domains[domainName] = {format:(isString(asJS) ? asJS : asJS ? "js" : "json"), domain: urlPrefix, mode: mode};
@@ -916,7 +927,7 @@
     missingMethod.call(WillJS.prototype, "call", "callComponent.js", true);
 
 })(window, "will", null);
-/*! WillJS v1.6.0 callComponent Plugin | github.com/kawamanza/willjs/ */
+/*! WillJS v1.7.0 callComponent Plugin | github.com/kawamanza/willjs/ */
 (function (window, globalName) {
     var will = window[globalName],
         u = will.u,
@@ -982,7 +993,7 @@
         };
     };
 })(window, "will");
-/*! WillJS v1.6.0 componentLoader Plugin | github.com/kawamanza/willjs/ */
+/*! WillJS v1.7.0 componentLoader Plugin | github.com/kawamanza/willjs/ */
 (function (window, globalName) {
     "use strict";
     var will, loadComponentLoaded = false, info;
