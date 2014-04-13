@@ -111,20 +111,22 @@
                     copyTo(original, other);
                 } else if (/\W$/.test(prop)) {
                     prop = RegExp['$`'];
-                    if (RegExp['$&'] == '=') {
-                        target.__defineSetter__(prop, value);
-                    } else {
-                        if (isFunction(value)) {
-                            target.__defineGetter__(prop, value);
+                    other = {
+                        get: function (){},
+                        set: function (){},
+                        enumerable: true,
+                        configurable: true
+                    };
+                    if (isFunction(value)) {
+                        if (RegExp['$&'] == '=') {
+                            other.set = value;
                         } else {
-                            Object.defineProperty(target, prop, copyTo({
-                                get: function (){},
-                                set: function (){},
-                                enumerable: true,
-                                configurable: true
-                            }, value));
+                            other.get = value;
                         }
+                    } else {
+                        copyTo(other, value);
                     }
+                    Object.defineProperty(target, prop, other);
                 } else {
                     target[prop] = value;
                 }
