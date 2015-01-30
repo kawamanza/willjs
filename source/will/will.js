@@ -723,6 +723,7 @@
             }
             dir += (/\/$/.test(dir) ? "" : "/");
             dir = newElement("script", {src: dir + relativePath}).src;
+            dir = dir.replace(/%7[bB]/g, '{').replace(/%7[dD]/g, '}');
             return dir;
         },
         ":info!": function () {

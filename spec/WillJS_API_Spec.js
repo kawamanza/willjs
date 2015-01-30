@@ -53,6 +53,7 @@ describe("WillJS API 'dir' method", function () {
         expect(willjs.dir('/root/bla', '../remote/components')).toMatch(/\/root\/remote\/components$/);
         expect(willjs.dir('./remote/components')).toMatch(/\/source\/will\/remote\/components$/);
         expect(willjs.dir('../remote/components')).toMatch(/\/source\/remote\/components$/);
+        expect(willjs.dir('../remote/components/{name}/{version}')).toMatch(/\/source\/remote\/components\/{name}\/{version}$/);
     });
 });
 
