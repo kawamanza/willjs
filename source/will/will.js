@@ -716,6 +716,15 @@
             setup(self, initConfig);
             return self;
         },
+        "dir": function (dir, relativePath) {
+            if (!relativePath) {
+                relativePath = dir;
+                dir = this.info.dir;
+            }
+            dir += (/\/$/.test(dir) ? "" : "/");
+            dir = newElement("script", {src: dir + relativePath}).src;
+            return dir;
+        },
         ":info!": function () {
             var context = this, info = context._info, elements, len, i,
                 tinfo, src;

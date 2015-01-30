@@ -47,6 +47,15 @@ describe("WillJS API 'addComponent' method", function () {
     });
 });
 
+describe("WillJS API 'dir' method", function () {
+    it("should add return a relative path", function () {
+        expect(willjs.dir('/root/bla', './remote/components')).toMatch(/\/root\/bla\/remote\/components$/);
+        expect(willjs.dir('/root/bla', '../remote/components')).toMatch(/\/root\/remote\/components$/);
+        expect(willjs.dir('./remote/components')).toMatch(/\/source\/will\/remote\/components$/);
+        expect(willjs.dir('../remote/components')).toMatch(/\/source\/remote\/components$/);
+    });
+});
+
 describe("WillJS API 'call' method", function () {
     it("should load firstComponent component", function () {
         runs(function () {
