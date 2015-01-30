@@ -57,6 +57,23 @@ describe("WillJS API 'dir' method", function () {
     });
 });
 
+describe("WillJS API Configuration 'addDomain' method", function () {
+    it("should load components using placeholders", function () {
+        runs(function () {
+            willjs.cfg.addDomain("remote", willjs.dir("../../remote/components/{name}/{version}"), "js");
+            willjs.call("remote:thirdPartyComponent", "1.5.3")("testing with Jasmine");
+        });
+        waitsFor(function () {
+            return willjs.cfg.debug.history.length;
+        }, "component not loaded", 1000);
+        runs(function () {
+            var h = willjs.cfg.debug.history;
+            expect(h.length).toBe(1);
+            expect(h[h.length -1]).toMatch(/\*\* loading asset .*?\/willjs\/remote\/components\/thirdPartyComponent\/1\.5\.3\/thirdPartyComponent\.js\"$/);
+        });
+    });
+});
+
 describe("WillJS API 'call' method", function () {
     it("should load firstComponent component", function () {
         runs(function () {

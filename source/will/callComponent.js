@@ -9,16 +9,16 @@
         requireAssets = u.requireAssets,
         registerFunctions = u.registerFunctions;
 
-    Processors.prototype.callComponent = new Processor(function (context, compPath, args) {
+    Processors.prototype.callComponent = new Processor(function (context, compPath, version, args) {
         if (!context.configured) {
             context.use("willjs-Config@./config.js" + context.info.qs)(function () {
                 context.configured = true;
-                process(context, "callComponent", [context, compPath, args]);
+                process(context, "callComponent", [context, compPath, version, args]);
             }, context.info.dir);
             return;
         }
         var self = this,
-            path = new Path(context, compPath),
+            path = new Path(context, compPath, version),
             url = path.url,
             entry = path.entry,
             impl = entry.impl;
@@ -57,10 +57,10 @@
         return false;
     });
 
-    will.constructor.prototype.call = function (compPath) {
+    will.constructor.prototype.call = function (compPath, version) {
         var context = this;
         return function () {
-            process(context, "callComponent", [context, compPath, arguments]);
+            process(context, "callComponent", [context, compPath, version, arguments]);
         };
     };
 })(window, "will");

@@ -575,7 +575,7 @@
      * @param {WillJS} context WillJS object context
      * @param {String} name The component call path
      */
-    function Path(context, name) {
+    function Path(context, name, version) {
         var cfg = context.cfg,
             d = cfg.domains,
             modes = context.modes,
@@ -590,6 +590,7 @@
             domainName: domainName,
             packageName: packageName,
             name: name,
+            version: version || "latest",
             base: d.domain,
             format: d.format || "json",
             prod: (d.mode || cfg.mode || modes.DEV) == modes.PROD,
@@ -597,7 +598,21 @@
         });
     }
     extend(Path.prototype, {
-        "dir!": function () {
+        "dir!": function() {
+            var dir = this._dir(), v, i;
+            if (/\{/.test(dir)) {
+                var m = dir.match(/([^\{]+|\{[^\}]+\})/gm), l = m.length;
+                for (i = 0; i < l; i++) {
+                    v = m[i];
+                    if (v.charAt(0) == '{') {
+                        m[i] = this[v.substr(1, v.length-2)] || v;
+                    }
+                }
+                dir = m.join("");
+            }
+            return dir;
+        },
+        "_dir": function () {
             var self = this,
                 context = self.ctx,
                 pn = self.packageName;
