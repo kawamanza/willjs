@@ -1,0 +1,6 @@
+Support for components to be loaded from personalized folder structure
+
+ Example:
+   will.cfg.addDomain("remote", "../others/{name}/{version}", "js");
+   will.call("thirdPartyComponent", "1.5.3")();
+     => loading asset "/willjs-path/others/thirdPartyComponent/1.5.3/thirdPartyComponent.js"
