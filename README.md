@@ -91,10 +91,28 @@ will.define(
 In this mode, the components are fetched by your entire path location. Example:
 
 ```javascript
-will.call("doSomething")();                             // /javascripts/will/doSomething.js
-will.call("local:root.doSomething")();                  // same as above
-will.call("mypack.doSomething")();                      // /javascripts/will/mypack/doSomething.js
-will.call("local:mypack.doSomething")();                // same as above
+will.call("doSomething")();
+  // => /javascripts/will/components/doSomething.js
+will.call("local:root.doSomething")();
+  // => same as above
+will.call("mypack.doSomething")();
+  // => /javascripts/will/components/mypack/doSomething.js
+will.call("local:mypack.doSomething")();
+  // => same as above
+```
+
+### Advanced component structure folder (v1.8.x)
+
+```javascript
+will.configure(function (config) {
+  config.addDomain("ext", will.dir("../ext/components/{name}/{version}"), "js");
+});
+will.call("ext:thirdPartyComponent")();
+  // => /javascripts/ext/components/thirdPartyComponent/latest/thirdPartyComponent.js
+will.call("ext:thirdPartyComponent", "latest")();
+  // => same as above
+will.call("ext:thirdPartyComponent", "1.5.3")();
+  // => /javascripts/ext/components/thirdPartyComponent/1.5.3/thirdPartyComponent.js
 ```
 
 ### PROD mode
@@ -102,10 +120,14 @@ will.call("local:mypack.doSomething")();                // same as above
 In this mode, the components are fetched by your package location. Example:
 
 ```javascript
-will.call("doSomething")();                             // /javascripts/will/root.js
-will.call("local:root.doSomething")();                  // same as above
-will.call("mypack.doSomething")();                      // /javascripts/will/mypack.js
-will.call("local:mypack.doSomething")();                // same as above
+will.call("doSomething")();
+  // => /javascripts/will/root.js
+will.call("local:root.doSomething")();
+  // => same as above
+will.call("mypack.doSomething")();
+  // => /javascripts/will/mypack.js
+will.call("local:mypack.doSomething")();
+  // => same as above
 ```
 
 ## Customized WillJS
