@@ -1,0 +1,6 @@
+Domain path now can use component's fullname into personalized folder structure
+
+ Example:
+   will.cfg.addDomain("remote", "../others/{fullname}/{version}", "js");
+   will.call("ext.thirdPartyComponent", "1.5.3")();
+     => loading asset "/willjs-path/others/ext/thirdPartyComponent/1.5.3/thirdPartyComponent.js"
