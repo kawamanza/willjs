@@ -17,7 +17,7 @@ notes:
       label: "Features:"
       tag: "feature"
 versioning:
-  version_mask: "v0.0.9"
+  version_mask: "v0.0.0"
   auto_increment:
     sections_level:
       minor:
