@@ -577,6 +577,7 @@
      */
     function Path(context, name, version) {
         var cfg = context.cfg,
+            fullname,
             d = cfg.domains,
             modes = context.modes,
             domainName, packageName;
@@ -586,10 +587,12 @@
             domainName = RegExp.$1 || "local";
         }
         d = d[domainName] || d.local || {};
+        fullname = (packageName === cfg.defaultPackage ? "" : (packageName + ".")) + name;
         extend(this, {
             domainName: domainName,
             packageName: packageName,
             name: name,
+            fullname: fullname.replace(/\./g, "/"),
             version: version || "latest",
             base: d.domain,
             format: d.format || "json",
@@ -617,7 +620,7 @@
                 context = self.ctx,
                 pn = self.packageName;
             return (self.base || context.info.dom)
-                + (self.prod || pn == context.cfg.defaultPackage
+                + (self.prod || pn == context.cfg.defaultPackage || self.base.indexOf("{fullname}") != -1
                     ? ""
                     : (pn + "/"));
         },
