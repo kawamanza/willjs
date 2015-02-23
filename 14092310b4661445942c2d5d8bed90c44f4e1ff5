@@ -1,0 +1,2 @@
+Fixed referencing relative dependencies when loading
+ specific version of a WillJS component
