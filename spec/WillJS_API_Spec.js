@@ -137,6 +137,30 @@ describe("WillJS API 'call' method", function () {
             expect(willjs.registry.local.root.myComponent.result[1]).toBe("value 2");
         });
     }); // it should call 'getImpl' only when the first call occurs */
+    it("should load relative dependencies", function () {
+        runs(function () {
+            // expect(willjs.dir("../remote/components")).toMatch(/\/source\/remote\/components$/);
+            willjs.cfg.addDomain("remote", willjs.dir("../remote/components/{fullname}/{version}"), "js");
+            willjs.define("remote:ext.thirdPartyComponent",
+                [
+                    "./somestyle.css",
+                    "./somestyle2.css"
+                ],
+                function () {
+                }
+            );
+            willjs.call("remote:ext.thirdPartyComponent", "1.5.3")("testing with Jasmine");
+        });
+        waitsFor(function () {
+            return willjs.cfg.debug.history.length == 2;
+        }, "component not loaded", 1000);
+        runs(function () {
+            var h = willjs.cfg.debug.history;
+            expect(h.length).toBe(2);
+            expect(h[h.length -2]).toMatch(/\*\* loading asset .*?\/source\/remote\/components\/ext\/thirdPartyComponent\/1\.5\.3\/somestyle\.css\"$/);
+            expect(h[h.length -1]).toMatch(/\*\* loading asset .*?\/source\/remote\/components\/ext\/thirdPartyComponent\/1\.5\.3\/somestyle2\.css\"$/);
+        });
+    });
 });
 
 describe("WillJS API 'use' method loading JSs", function () {

@@ -638,6 +638,7 @@
                 r = registry[dn] || (registry[dn] = {}),
                 p = r[pn] || (r[pn] = {}),
                 n = self.name;
+            if (p[n]) p[n].dir = self.dir;
             return p[n] || (p[n] = {rescue: function () {/*delete p[n];*/}, dir: self.dir});
         },
         toString: function () {
