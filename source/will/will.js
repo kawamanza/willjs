@@ -499,12 +499,26 @@
      * @param {Function} initConfig Preparing function.
      * @private
      */
-    function setup(context, initConfig) {
+    function setup(context, initConfig, isToPostLoad) {
         if (! ("cfg" in context)) {
             extend(context, getConfig());
             if (! ("use" in context)) extend(context, basicApi);
         }
-        if (isFunction(initConfig)) initConfig(context.cfg);
+        if (isFunction(initConfig)) {
+            var postLoad = context.cfg.postLoad;
+            if (isToPostLoad) {
+                if (context.configured) {
+                    initConfig(context.cfg);
+                } else {
+                    postLoad.push(initConfig);
+                }
+            } else {
+                initConfig(context.cfg);
+                while (postLoad.length) {
+                    postLoad.shift()(context.cfg);
+                }
+            }
+        }
     }
 
     /**
@@ -735,6 +749,11 @@
             setup(self, initConfig);
             return self;
         },
+        "postConfigure": function (initConfig) {
+            var self = this;
+            setup(self, initConfig, true);
+            return self;
+        },
         "dir": function (dir, relativePath) {
             if (!relativePath) {
                 relativePath = dir;
@@ -788,6 +807,7 @@
             registry: {},
             cfg: extend(new Defaults(), {
                     "processors": new Processors(),
+                    "postLoad": [],
                     "assetsList": {
                         "jquery": ["//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js?"]
                     },

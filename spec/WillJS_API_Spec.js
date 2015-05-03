@@ -57,6 +57,44 @@ describe("WillJS API 'dir' method", function () {
     });
 });
 
+describe("WillJS API Configuration", function () {
+    it("should run postLoad configuration", function () {
+        var fnConfig = resetWillJS(true);
+        runs(function () {
+            willjs.postConfigure(fnConfig);
+            willjs.postConfigure(function (config) {
+                config.debug("postLoaded 1");
+            });
+            expect(willjs.cfg.debug).toBeUndefined();
+            willjs.configure(function (config) {
+                var goConfig = function () {
+                    if (typeof config.debug !== "function") {
+                        setTimeout(goConfig, 10);
+                        return;
+                    }
+                    config.debug("postLoaded 2");
+                };
+                goConfig();
+            });
+            expect(willjs.cfg.debug).not.toBeUndefined();
+        });
+        waitsFor(function () {
+            return willjs.cfg.debug.history.length > 1;
+        }, "config not loaded", 1000);
+        runs(function () {
+            var h = willjs.cfg.debug.history;
+            expect(h.length).toBe(2);
+            expect(h[0]).toEqual("postLoaded 1");
+            expect(h[1]).toEqual("postLoaded 2");
+            willjs.postConfigure(function (config) {
+                config.debug("postLoaded 3");
+            });
+            expect(h.length).toBe(3);
+            expect(h[2]).toEqual("postLoaded 3");
+        });
+    });
+});
+
 describe("WillJS API Configuration 'addDomain' method", function () {
     it("should load components using placeholders", function () {
         runs(function () {

@@ -16,10 +16,11 @@ beforeEach(function() {
     resetWillJS();
 });
 
-function resetWillJS() {
+function resetWillJS(resetOnly) {
     removeWillJSElements();
     if (window.willjs) delete window.willjs;
-    window.will.as("willjs").configure(function (config) {
+    var willjs = window.will.as("willjs");
+    var fnConfig = function (config) {
         config.addDomain("local", will.info.dir.replace(/\/source\/.*$/, "/spec/components"));
         config.queryString = function (url) {if (!/^\/\/ajax\.google/.test(url)) return specSuffix;};
         config.debug = function (msg) {
@@ -27,7 +28,12 @@ function resetWillJS() {
             if (console && console.log) console.log(msg);
         };
         config.debug.history = [];
-    });
+    };
+    if (resetOnly) {
+        return fnConfig;
+    } else {
+        willjs.configure(fnConfig);
+    }
 }
 
 function removeWillJSElements(list) {
