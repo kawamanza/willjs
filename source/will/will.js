@@ -1,5 +1,5 @@
 /*!
- * WillJS JavaScript Library v1.8.0
+ * WillJS JavaScript Library v1.8.2
  * http://github.com/kawamanza/willjs/
  *
  * Copyright 2011-2012, Marcelo Manzan
@@ -823,7 +823,7 @@
     function Defaults() {}
     extend(Defaults.prototype, {
         "mode": basicApi.modes.DEV,
-        "version": "1.8.0",
+        "version": "1.8.2",
         "addDomain": function (domainName, urlPrefix, asJS, mode) {
             if (urlPrefix) urlPrefix = urlPrefix + (/\/$/.test(urlPrefix) ? "" : "/");
             this.domains[domainName] = {format:(isString(asJS) ? asJS : asJS ? "js" : "json"), domain: urlPrefix, mode: mode};
