@@ -2,6 +2,11 @@
 
 A simple way to invoke on-demand behaviors into your website pages.
 
+## Introduction
+
+This utility aims to facilitate the use of WebComponents and JavaScript libraries loaded on the page,
+ensuring its loading only during the actual need to use.
+
 ## Public API
 
 ```javascript
