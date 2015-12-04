@@ -18,6 +18,7 @@ will.use("/jquery.js", "/jquery-ui.js")();             // loads required assets 
 
 See the [demo page](http://kawamanza.github.io/willjs/demo/).
 
+<!--
 ### Site structure
 
 ```
@@ -47,6 +48,7 @@ Links
 2. [www-root/js/will/components/jqueryui/slider.js](http://kawamanza.github.io/willjs/demo/js/will/components/jqueryui/slider.js)
 3. [www-root/js/will/components/popMessage.js](http://kawamanza.github.io/willjs/demo/js/will/components/popMessage.js)
 4. [www-root/js/will/components/modal.js](http://kawamanza.github.io/willjs/demo/js/will/components/modal.js)
+ -->
 
 ## Configuration
 
