@@ -54,7 +54,6 @@ Links
 
 ```javascript
 will.configure(function (config) {
-    config.mode = will.modes.DEV;                      // default mode
     config.queryString = "_=useThisForCaching";
 
     config.addDomain(
