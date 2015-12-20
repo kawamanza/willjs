@@ -90,11 +90,9 @@ will.define(
 );
 ```
 
-## Modes
+## Loading components
 
-### DEV mode
-
-In this mode, the components are fetched by your entire path location. Example:
+The components are fetched by your entire path location. Example:
 
 ```javascript
 will.call("doSomething")();
@@ -121,6 +119,7 @@ will.call("ext:thirdPartyComponent", "1.5.3")();
   // => /javascripts/ext/components/thirdPartyComponent/1.5.3/thirdPartyComponent.js
 ```
 
+<!--
 ### PROD mode
 
 In this mode, the components are fetched by your package location. Example:
@@ -135,6 +134,7 @@ will.call("mypack.doSomething")();
 will.call("local:mypack.doSomething")();
   // => same as above
 ```
+-->
 
 ## Customized WillJS
 
