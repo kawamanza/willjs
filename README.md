@@ -140,7 +140,6 @@ will.call("local:mypack.doSomething")();
 
 ```javascript
 will.as("myWill").configure(function (config) {
-    config.mode = will.modes.DEV;                       // default mode
     config.defaultPackage = "root";                     // default package
 });
 // Public API
