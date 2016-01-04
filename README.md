@@ -7,6 +7,11 @@ A simple way to invoke on-demand behaviors into your website pages.
 This utility aims to facilitate the use of WebComponents and JavaScript libraries loaded on the page,
 ensuring its loading only during the actual need to use.
 
+## Features
+
+* Triggers a component's calling, with inclusion of JS-libs on demand.
+* Manages the CSS dependencies of components and its import order.
+
 ## Public API
 
 ```javascript
