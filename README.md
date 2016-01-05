@@ -12,7 +12,7 @@ ensuring its loading only during the actual need to use.
 * Triggers a component's calling, with inclusion of JS-libs on demand.
 * Manages the CSS dependencies of components and its import order.
 * Smart algorithm to import libs only once.
-* Works in the "convention over configuration" mode.
+* Works in the "convention over configuration" mode when loading components.
 
 ## Public API
 
