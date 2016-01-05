@@ -11,6 +11,7 @@ ensuring its loading only during the actual need to use.
 
 * Triggers a component's calling, with inclusion of JS-libs on demand.
 * Manages the CSS dependencies of components and its import order.
+* Smart algorithm to import libs only once.
 
 ## Public API
 
