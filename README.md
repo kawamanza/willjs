@@ -153,5 +153,3 @@ will.as("myWill").configure(function (config) {
 myWill.call("componentName")(param1, param2);           // invokes a component
 myWill.use("/jquery.js", "/jquery-ui.js")();            // loads required assets if not present yet.
 ```
-
-Enjoy in moderation!
